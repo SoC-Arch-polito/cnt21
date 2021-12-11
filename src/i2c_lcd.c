@@ -119,6 +119,7 @@ void lcd_send_string (char *str)
 
 void lcd_send_two_string (char *str1, char * str2)
 {
+    lcd_clear();
 	lcd_go_home();
 	lcd_send_string(str1);
 	lcd_put_cur(1,0);
@@ -126,6 +127,7 @@ void lcd_send_two_string (char *str1, char * str2)
 }
 
 void lcd_set_text_downloading(){
+    lcd_clear();
     lcd_go_home();
     lcd_send_string("Downloading...");
 }

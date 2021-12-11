@@ -4,7 +4,10 @@
 using sysbus
 $name?="STM32 F4 Discovery"
 mach create $name
+include @./peripherals/PersonalActuators/I2CDisplay.cs
 machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+machine LoadPlatformDescription @./peripherals/peripheral_definition.repl
+machine LoadPlatformDescription @./peripherals/ext_peripheral.repl
 
 cpu PerformanceInMips 125
 

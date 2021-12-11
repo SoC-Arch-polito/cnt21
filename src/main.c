@@ -1,4 +1,5 @@
 #include "main.h"
+#include "i2c_lcd.h"
 #define F4 1
 
 #if F0
@@ -42,20 +43,12 @@ int main(void)
 
   // Setup I2C
   MX_I2C1_Init();
-  
-  LED_GPIO_CLK_ENABLE();
 
-  GPIO_InitTypeDef GPIO_InitStruct;
-
-  GPIO_InitStruct.Pin = LED_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
+  lcd_init();
 
   while (1)
   {
-    HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
+    lcd_set_number_people(10);
 
     HAL_Delay(1000);
   }
