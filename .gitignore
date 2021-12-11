@@ -54,3 +54,6 @@ dkms.conf
 # PIO & VSCode files
 .pio/**
 .vscode/**
+
+# MacOS files
+.DS_Store
