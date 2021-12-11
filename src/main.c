@@ -1,4 +1,5 @@
 #include "main.h"
+#include "flash.h"
 #define F4 1
 
 #if F0
@@ -23,36 +24,44 @@
 #error "Unsupported STM32 Family"
 #endif
 
-#define LED_PIN                                GPIO_PIN_5
-#define LED_GPIO_PORT                          GPIOA
-#define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOA_CLK_ENABLE()
-
+#define LED_PIN GPIO_PIN_5
+#define LED_GPIO_PORT GPIOA
+#define LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE()
 
 void SystemClock_Config(void);
 
-int main(void)
-{ 
-  SystemInit();
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-  SystemClock_Config();
-  HAL_Init();
-  
-  LED_GPIO_CLK_ENABLE();
+uint8_t test_write[5] = {0x11, 0x22, 0x33, 0x44, 0x55};
+uint8_t test_read[5];
 
-  GPIO_InitTypeDef GPIO_InitStruct;
+int main(void) {
+    SystemInit();
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+    SystemClock_Config();
+    HAL_Init();
 
-  GPIO_InitStruct.Pin = LED_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
+    LED_GPIO_CLK_ENABLE();
 
-  while (1)
-  {
-    HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
+    GPIO_InitTypeDef GPIO_InitStruct;
 
-    HAL_Delay(1000);
-  }
+    GPIO_InitStruct.Pin = LED_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
+
+    flashSetSectorAddrs(11, 0x080E0000);
+    flashWrite(0, test_write, 5, DATA_TYPE_8);
+
+    while (1) {
+        HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
+
+        flashRead(0, test_read, 5, DATA_TYPE_8);
+        flashWrite(10, test_write, 5, DATA_TYPE_8);
+        flashEraseSector(11);
+        flashRead(0, test_read, 5, DATA_TYPE_8);
+
+        HAL_Delay(1000);
+    }
 }
 
 void SystemClock_Config(void) {
@@ -94,56 +103,47 @@ void SystemClock_Config(void) {
     HAL_RCC_EnableCSS();
 }
 
-void SysTick_Handler(void)
-{
-  HAL_IncTick();
+void SysTick_Handler(void) {
+    HAL_IncTick();
 }
 
-void NMI_Handler(void)
-{
+void NMI_Handler(void) {
 }
 
-void HardFault_Handler(void)
-{
-  while (1) {}
+void HardFault_Handler(void) {
+    while (1) {
+    }
 }
 
-
-void MemManage_Handler(void)
-{
-  while (1) {}
+void MemManage_Handler(void) {
+    while (1) {
+    }
 }
 
-void BusFault_Handler(void)
-{
-  while (1) {}
+void BusFault_Handler(void) {
+    while (1) {
+    }
 }
 
-void UsageFault_Handler(void)
-{
-  while (1) {}
+void UsageFault_Handler(void) {
+    while (1) {
+    }
 }
 
-void SVC_Handler(void)
-{
+void SVC_Handler(void) {
 }
 
-
-void DebugMon_Handler(void)
-{
+void DebugMon_Handler(void) {
 }
 
-void PendSV_Handler(void)
-{
+void PendSV_Handler(void) {
 }
 
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+void Error_Handler(void) {
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1) {
+    }
+    /* USER CODE END Error_Handler_Debug */
 }
