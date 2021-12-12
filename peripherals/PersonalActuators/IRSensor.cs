@@ -24,6 +24,7 @@ namespace Antmicro.Renode.Peripherals
             }
         }
 
+        // Triggers random press in times between 700 and 3000 ms
         public void TriggerThread(){
             while(true){
                 Thread.Sleep(GetRandomNumber(700, 3000));
