@@ -1,4 +1,5 @@
 #include "main.h"
+#include "led.h"
 #define F4 1
 
 #if F0
@@ -23,12 +24,8 @@
 #error "Unsupported STM32 Family"
 #endif
 
-#define LED_PIN                                GPIO_PIN_5
-#define LED_GPIO_PORT                          GPIOA
-#define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOA_CLK_ENABLE()
-
-
 void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
 
 int main(void)
 { 
@@ -37,21 +34,18 @@ int main(void)
   SystemClock_Config();
   HAL_Init();
   
-  LED_GPIO_CLK_ENABLE();
-
-  GPIO_InitTypeDef GPIO_InitStruct;
-
-  GPIO_InitStruct.Pin = LED_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
-
+  // Init LED
+  MX_GPIO_Init();
+  
+  int i = 0;
   while (1)
   {
-    HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
-
-    HAL_Delay(1000);
+    if(i++%2 == 0)
+      turn_on_red_led();
+    else
+      turn_off_red_led();
+      
+    HAL_Delay(500);
   }
 }
 
@@ -92,6 +86,26 @@ void SystemClock_Config(void) {
     /** Enables the Clock Security System
      */
     HAL_RCC_EnableCSS();
+}
+
+static void MX_GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct; 
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  //pin 6 as pull up
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
+
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
 }
 
 void SysTick_Handler(void)

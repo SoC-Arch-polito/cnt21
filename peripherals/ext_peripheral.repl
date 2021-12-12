@@ -1,0 +1,5 @@
+redLed: Miscellaneous.LED @ gpioPortD
+greenLed: Miscellaneous.LED @ gpioPortD
+gpioPortD:
+    6 -> redLed@0
+    7 -> greenLed@0
