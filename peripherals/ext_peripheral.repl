@@ -6,3 +6,8 @@ gpioPortD:
 
 flash_ctrl: MTD.STM32F4_FlashInterfaceReg @ sysbus <0x40023C00, +0x400>
     flashMemory: flash
+
+IRSensorEnter: IRSensor @ gpioPortD
+    -> gpioPortD@8
+IRSensorExit: IRSensor @ gpioPortD
+    -> gpioPortD@9

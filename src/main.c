@@ -1,5 +1,6 @@
 #include "main.h"
 #include "led.h"
+#include "ir.h"
 #define F4 1
 
 #if F0
@@ -37,14 +38,8 @@ int main(void)
   // Init LED
   MX_GPIO_Init();
   
-  int i = 0;
   while (1)
   {
-    if(i++%2 == 0)
-      turn_on_red_led();
-    else
-      turn_off_red_led();
-      
     HAL_Delay(500);
   }
 }
@@ -97,15 +92,52 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Pin = RED_LED_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  //pin 6 as pull up
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
+  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
 
-  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Pin = GREEN_LED_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
+  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
+
+  /*Configure GPIO pin : PA9 */
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = IR_1_PIN|IR_2_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_BANK_IR, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(IR_EXT_HANDLE, 0, 0);
+  HAL_NVIC_EnableIRQ(IR_EXT_HANDLE);
+}
+
+void EXTI9_5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(IR_1_PIN); // Reset the PIN8 Interrupt
+  HAL_GPIO_EXTI_IRQHandler(IR_2_PIN); // Reset the PIN9 Interrupt
+}
+
+/**
+ * @brief Handler to manage the interrupt coming from the two IR sensors
+ * 
+ * @param GPIO_Pin the IR sensor pin
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  switch(GPIO_Pin)
+		{
+		case IR_1_PIN:
+      // TODO: manage counter, increase
+      turn_on_red_led();
+			break;
+		case IR_2_PIN:
+      // TODO: manage counter, decrease
+      turn_off_red_led();
+      break;
+		}
 }
 
 void SysTick_Handler(void)
