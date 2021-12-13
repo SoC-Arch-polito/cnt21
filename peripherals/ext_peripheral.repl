@@ -3,3 +3,6 @@ greenLed: Miscellaneous.LED @ gpioPortD
 gpioPortD:
     6 -> redLed@0
     7 -> greenLed@0
+
+flash_ctrl: MTD.STM32F4_FlashInterfaceReg @ sysbus <0x40023C00, +0x400>
+    flashMemory: flash
