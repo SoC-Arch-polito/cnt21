@@ -3,3 +3,8 @@ greenLed: Miscellaneous.LED @ gpioPortD
 gpioPortD:
     6 -> redLed@0
     7 -> greenLed@0
+    
+IRSensorEnter: IRSensor @ gpioPortD
+    -> gpioPortD@8
+IRSensorExit: IRSensor @ gpioPortD
+    -> gpioPortD@9
