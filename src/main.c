@@ -1,6 +1,7 @@
 #include "main.h"
-#include "led.h"
-#include "ir.h"
+#include "stdio.h"
+#include "string.h"
+#include "time.h"
 #define F4 1
 
 #if F0
@@ -25,23 +26,71 @@
 #error "Unsupported STM32 Family"
 #endif
 
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
+/* USER CODE BEGIN PV */
 
-int main(void)
-{ 
-  SystemInit();
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-  SystemClock_Config();
-  HAL_Init();
-  
-  // Init LED
-  MX_GPIO_Init();
-  
-  while (1)
-  {
-    HAL_Delay(500);
-  }
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+
+static void MX_USART1_UART_Init(void);
+static void MX_RTC_Init(void);
+
+UART_HandleTypeDef huart1;
+RTC_HandleTypeDef hrtc;
+
+/**
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
+    uint8_t datestamp[23], timestamp[23];
+    RTC_DateTypeDef gDate;
+    RTC_TimeTypeDef gTime;
+    int number, hour, min, sec, day, month, year;
+    strcpy((char *)datestamp, "11:11:11 11/11/2020 10");
+    SystemInit();
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+    SystemClock_Config();
+    HAL_Init();
+    MX_USART1_UART_Init();
+    MX_RTC_Init();
+
+    //HAL_UART_Receive(&huart1, data, 21, HAL_MAX_DELAY);
+    sscanf((char *)datestamp, "%d:%d:%d %d/%d/%d %d", &hour, &min, &sec, &day, &month, &year, &number);
+    gTime.Hours = hour;
+    gTime.Minutes = min;
+    gTime.Seconds = sec;
+    HAL_RTC_SetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+    gDate.Date = day;
+    gDate.Month = month;
+    gDate.Year = year - 2000;
+    HAL_RTC_SetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+    struct tm t;
+    time_t t_of_day;
+
+    t.tm_year = year-1900;  // Year - 1900
+    t.tm_mon = month - 1;      // Month, where 0 = jan
+    t.tm_mday = day;          // Day of the month
+    t.tm_hour = hour;
+    t.tm_min = min;
+    t.tm_sec = sec;
+    t.tm_isdst = 1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
+    t_of_day = mktime(&t);
+    printf("%lld", t_of_day);
+
+
+    while (1) {
+
+        HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+
+        snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n", gTime.Hours, gTime.Minutes, gTime.Seconds);
+        snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
+        HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
+        HAL_Delay(1000);
+    }
 }
 
 void SystemClock_Config(void) {
@@ -83,113 +132,132 @@ void SystemClock_Config(void) {
     HAL_RCC_EnableCSS();
 }
 
-static void MX_GPIO_Init(void) {
-  GPIO_InitTypeDef GPIO_InitStruct; 
+static void MX_USART1_UART_Init(void) {
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  GPIO_InitStruct.Pin = RED_LED_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  //pin 6 as pull up
-  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
-
-  GPIO_InitStruct.Pin = GREEN_LED_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
-
-  /*Configure GPIO pin : PA9 */
-  /*Configure GPIO pins : PA8 PA9 */
-  GPIO_InitStruct.Pin = IR_1_PIN|IR_2_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIO_BANK_IR, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(IR_EXT_HANDLE, 0, 0);
-  HAL_NVIC_EnableIRQ(IR_EXT_HANDLE);
+    huart1.Instance = USART1;
+    huart1.Init.BaudRate = 115200;
+    huart1.Init.WordLength = UART_WORDLENGTH_8B;
+    huart1.Init.StopBits = UART_STOPBITS_1;
+    huart1.Init.Parity = UART_PARITY_NONE;
+    huart1.Init.Mode = UART_MODE_TX_RX;
+    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart1) != HAL_OK) {
+        Error_Handler();
+    }
 }
 
-void EXTI9_5_IRQHandler(void)
-{
-  HAL_GPIO_EXTI_IRQHandler(IR_1_PIN); // Reset the PIN8 Interrupt
-  HAL_GPIO_EXTI_IRQHandler(IR_2_PIN); // Reset the PIN9 Interrupt
+static void MX_RTC_Init(void) {
+
+    /* USER CODE BEGIN RTC_Init 0 */
+
+    /* USER CODE END RTC_Init 0 */
+
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef sDate = {0};
+    RTC_AlarmTypeDef sAlarm = {0};
+
+    /* USER CODE BEGIN RTC_Init 1 */
+
+    /* USER CODE END RTC_Init 1 */
+    /** Initialize RTC Only
+     */
+    hrtc.Instance = RTC;
+    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+    hrtc.Init.AsynchPrediv = 127;
+    hrtc.Init.SynchPrediv = 255;
+    hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+    hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+        Error_Handler();
+    }
+
+    /* USER CODE BEGIN Check_RTC_BKUP */
+
+    /* USER CODE END Check_RTC_BKUP */
+
+    /** Initialize RTC and set the Time and Date
+     */
+    sTime.Hours = 0x20;
+    sTime.Minutes = 0x10;
+    sTime.Seconds = 0x07;
+    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+
+    sDate.WeekDay = RTC_WEEKDAY_SATURDAY;
+    sDate.Month = RTC_MONTH_DECEMBER;
+    sDate.Date = 0x11;
+    sDate.Year = 0x05;
+
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Enable the Alarm A
+     */
+    sTime.Hours = 0x03;
+    sTime.Minutes = 0x10;
+    sTime.Seconds = 0x07;
+    sAlarm.AlarmTime.SubSeconds = 0x0;
+    sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.AlarmDateWeekDay = 0x3;
+    sAlarm.Alarm = RTC_ALARM_A;
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN RTC_Init 2 */
+
+    /* USER CODE END RTC_Init 2 */
 }
 
-/**
- * @brief Handler to manage the interrupt coming from the two IR sensors
- * 
- * @param GPIO_Pin the IR sensor pin
- */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  switch(GPIO_Pin)
-		{
-		case IR_1_PIN:
-      // TODO: manage counter, increase
-      turn_on_red_led();
-			break;
-		case IR_2_PIN:
-      // TODO: manage counter, decrease
-      turn_off_red_led();
-      break;
-		}
+void SysTick_Handler(void) {
+    HAL_IncTick();
 }
 
-void SysTick_Handler(void)
-{
-  HAL_IncTick();
+void NMI_Handler(void) {
 }
 
-void NMI_Handler(void)
-{
+void HardFault_Handler(void) {
+    while (1) {
+    }
 }
 
-void HardFault_Handler(void)
-{
-  while (1) {}
+void MemManage_Handler(void) {
+    while (1) {
+    }
 }
 
-
-void MemManage_Handler(void)
-{
-  while (1) {}
+void BusFault_Handler(void) {
+    while (1) {
+    }
 }
 
-void BusFault_Handler(void)
-{
-  while (1) {}
+void UsageFault_Handler(void) {
+    while (1) {
+    }
 }
 
-void UsageFault_Handler(void)
-{
-  while (1) {}
+void SVC_Handler(void) {
 }
 
-void SVC_Handler(void)
-{
+void DebugMon_Handler(void) {
 }
 
-
-void DebugMon_Handler(void)
-{
+void PendSV_Handler(void) {
 }
 
-void PendSV_Handler(void)
-{
-}
-
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+void Error_Handler(void) {
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1) {
+    }
+    /* USER CODE END Error_Handler_Debug */
 }
