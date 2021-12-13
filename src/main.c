@@ -1,5 +1,6 @@
 #include "main.h"
 #include "i2c_lcd.h"
+#include "led.h"
 #define F4 1
 
 #if F0
@@ -24,15 +25,12 @@
 #error "Unsupported STM32 Family"
 #endif
 
-#define LED_PIN                                GPIO_PIN_5
-#define LED_GPIO_PORT                          GPIOA
-#define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOA_CLK_ENABLE()
-
 // Static reference for I2C
 I2C_HandleTypeDef hi2c1;
 
 void SystemClock_Config(void);
 static void MX_I2C1_Init(void);
+static void MX_GPIO_Init(void);
 
 int main(void)
 { 
@@ -40,7 +38,8 @@ int main(void)
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
   SystemClock_Config();
   HAL_Init();
-
+  // Init LED
+  MX_GPIO_Init();
   // Setup I2C
   MX_I2C1_Init();
 
@@ -93,6 +92,7 @@ void SystemClock_Config(void) {
     HAL_RCC_EnableCSS();
 }
 
+
 static void MX_I2C1_Init(void)
 {
   hi2c1.Instance = I2C1;
@@ -108,6 +108,26 @@ static void MX_I2C1_Init(void)
   {
     Error_Handler();
   }
+}
+
+static void MX_GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct; 
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  //pin 6 as pull up
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
+
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); 
 }
 
 void SysTick_Handler(void)
