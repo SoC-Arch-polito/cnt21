@@ -1,3 +1,4 @@
+I2CDisplay: I2CDisplay @i2c1 0x34
 redLed: Miscellaneous.LED @ gpioPortD
 greenLed: Miscellaneous.LED @ gpioPortD
 gpioPortD:
