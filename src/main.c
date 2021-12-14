@@ -1,5 +1,6 @@
-#include "main.h"
 #include "stdio.h"
+#include "main.h"
+#include "rtc.h"
 #include "string.h"
 #include "time.h"
 #define F4 1
@@ -39,16 +40,16 @@ static void MX_RTC_Init(void);
 UART_HandleTypeDef huart1;
 RTC_HandleTypeDef hrtc;
 
+
 /**
  * @brief  The application entry point.
  * @retval int
  */
 int main(void) {
-    uint8_t datestamp[23], timestamp[23];
+    uint8_t start[23], datestamp[23], timestamp[23];
     RTC_DateTypeDef gDate;
     RTC_TimeTypeDef gTime;
-    int number, hour, min, sec, day, month, year;
-    strcpy((char *)datestamp, "11:11:11 11/11/2020 10");
+    strcpy((char *)start, "11:11:11 11/11/2020 10");
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
     SystemClock_Config();
@@ -57,35 +58,16 @@ int main(void) {
     MX_RTC_Init();
 
     //HAL_UART_Receive(&huart1, data, 21, HAL_MAX_DELAY);
-    sscanf((char *)datestamp, "%d:%d:%d %d/%d/%d %d", &hour, &min, &sec, &day, &month, &year, &number);
-    gTime.Hours = hour;
-    gTime.Minutes = min;
-    gTime.Seconds = sec;
-    HAL_RTC_SetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
-    gDate.Date = day;
-    gDate.Month = month;
-    gDate.Year = year - 2000;
-    HAL_RTC_SetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
-    struct tm t;
-    time_t t_of_day;
-
-    t.tm_year = year-1900;  // Year - 1900
-    t.tm_mon = month - 1;      // Month, where 0 = jan
-    t.tm_mday = day;          // Day of the month
-    t.tm_hour = hour;
-    t.tm_min = min;
-    t.tm_sec = sec;
-    t.tm_isdst = 1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
-    t_of_day = mktime(&t);
-    printf("%lld", t_of_day);
-
+    readStart(&hrtc, &gTime, &gDate, start);
+    int timestamp_func;
+    timestamp_func = unix_timestamp(&gTime, &gDate);
 
     while (1) {
 
         HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
         HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
 
-        snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n", gTime.Hours, gTime.Minutes, gTime.Seconds);
+        snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
         snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
         HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
         HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
