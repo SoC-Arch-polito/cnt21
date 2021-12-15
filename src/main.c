@@ -53,10 +53,11 @@ RTC_HandleTypeDef hrtc;
  * @retval int
  */
 int main(void) {
-    uint8_t start[23], datestamp[23], timestamp[23];
+    uint8_t start[23];
+    // uint8_t datestamp[23], timestamp[23];
     RTC_DateTypeDef gDate;
     RTC_TimeTypeDef gTime;
-    strcpy((char *)start, "11:11:11 11/11/2020 10");
+    strcpy((char *)start, "11:11:11 11/11/2021 10");
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
     SystemClock_Config();
@@ -70,36 +71,39 @@ int main(void) {
     int read_timestamp_func;
     timestamp_func = unix_timestamp(&gTime, &gDate);
 
-    LED_GPIO_CLK_ENABLE();
+    // LED_GPIO_CLK_ENABLE();
 
-    GPIO_InitTypeDef GPIO_InitStruct;
+    // GPIO_InitTypeDef GPIO_InitStruct;
 
-    GPIO_InitStruct.Pin = LED_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
+    // GPIO_InitStruct.Pin = LED_PIN;
+    // GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    // GPIO_InitStruct.Pull = GPIO_PULLUP;
+    // GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    // HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
 
     flashSetSectorAddrs(11, 0x080E0000);
-    flashWrite(0, test_write, 5, DATA_TYPE_8);
+    // flashWrite(0, test_write, 5, DATA_TYPE_8);
 
     while (1) {
-        uint32_t to_write[10];
-        HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
 
-        flashRead(0, test_read, 5, DATA_TYPE_8);
-        flashWrite(10, &timestamp_func, 1, DATA_TYPE_32);
+        // HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
+
+        // flashRead(0, test_read, 5, DATA_TYPE_8);
+        // flashWrite(10, &timestamp_func, 1, DATA_TYPE_32);
         // flashEraseSector(11);
-        flashRead(10, &read_timestamp_func, 5, DATA_TYPE_32);
+        // flashRead(10, &read_timestamp_func, 5, DATA_TYPE_32);
 
         HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
         HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
 
-        snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
-        snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
-        HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
-        HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
-        HAL_Delay(10000);
+        incrementNumber(&gTime, &gDate);
+
+        // snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
+        // snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
+        // HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
+        // HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
+
+        HAL_Delay(1000);
     }
 }
 

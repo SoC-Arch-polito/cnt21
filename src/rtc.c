@@ -1,6 +1,11 @@
 #include "rtc.h"
 #include "time.h"
 #include "stdio.h"
+#include "flash.h"
+
+static int number;
+static uint16_t max_number = 65535;
+static uint16_t i = 0;
 
 int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
     struct tm t;
@@ -18,7 +23,7 @@ int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
 }
 
 void readStart(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint8_t start[]) {
-    int hour, min, sec, day, month, year, number;
+    int hour, min, sec, day, month, year;
     sscanf((char *)start, "%d:%d:%d %d/%d/%d %d", &hour, &min, &sec, &day, &month, &year, &number);
     gTime->Hours = hour;
     gTime->Minutes = min;
@@ -30,16 +35,26 @@ void readStart(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef 
     HAL_RTC_SetDate(hrtc, gDate, RTC_FORMAT_BIN);
 }
 
-int incrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t *number){
+int incrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate){
     int timestamp = unix_timestamp(gTime, gDate);
-    if((int) number < 65535)
+    if((int) number < max_number)
         number++;
+    flashWrite(i, &timestamp, 1, DATA_TYPE_32);
+    flashWrite(i + 4, &number, 1, DATA_TYPE_16);
+    i = i + 5;
     return timestamp;
 }
 
-int decrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t *number){
+int decrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate){
     int timestamp = unix_timestamp(gTime, gDate);
     if(number > 0)
         number--;
+    flashWrite(i, &timestamp, 1, DATA_TYPE_32);
+    flashWrite(i + 4, &number, 1, DATA_TYPE_16);
+    i = i + 5;
     return timestamp;
+}
+
+void setNumber(uint16_t this_number){
+    number = this_number;
 }
