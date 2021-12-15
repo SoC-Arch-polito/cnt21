@@ -29,3 +29,17 @@ void readStart(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef 
     gDate->Year = year - 2000;
     HAL_RTC_SetDate(hrtc, gDate, RTC_FORMAT_BIN);
 }
+
+int incrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t *number){
+    int timestamp = unix_timestamp(gTime, gDate);
+    if(number < 65535)
+        number++;
+    return timestamp;
+}
+
+int decrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t *number){
+    int timestamp = unix_timestamp(gTime, gDate);
+    if(number > 0)
+        number--;
+    return timestamp;
+}
