@@ -4,9 +4,15 @@
 using sysbus
 $name?="STM32 F4 Discovery"
 mach create $name
-include @peripherals/FlashInterfReg/STM32F4_FlashInterfaceReg.cs
+
+include @./peripherals/FlashInterfaceRegister/STM32F4_FlashInterfaceReg.cs
+include @./peripherals/PersonalActuators/IRSensor.cs
 machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
-machine LoadPlatformDescription @peripherals/ext_peripheral.repl
+machine LoadPlatformDescription @./peripherals/ext_peripheral.repl
+
+emulation CreateServerSocketTerminal 1234 "externalUART" false
+connector Connect uart1 externalUART
+showAnalyzer uart1
 
 cpu PerformanceInMips 125
 

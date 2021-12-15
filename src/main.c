@@ -1,5 +1,9 @@
+#include "stdio.h"
 #include "main.h"
 #include "flash.h"
+#include "rtc.h"
+#include "string.h"
+#include "time.h"
 #define F4 1
 
 #if F0
@@ -27,17 +31,43 @@
 #define LED_PIN GPIO_PIN_5
 #define LED_GPIO_PORT GPIOA
 #define LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE()
+/* USER CODE BEGIN PV */
 
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 
 uint8_t test_write[5] = {0x11, 0x22, 0x33, 0x44, 0x55};
 uint8_t test_read[5];
 
+static void MX_USART1_UART_Init(void);
+static void MX_RTC_Init(void);
+
+UART_HandleTypeDef huart1;
+RTC_HandleTypeDef hrtc;
+
+
+/**
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void) {
+    uint8_t start[23], datestamp[23], timestamp[23];
+    RTC_DateTypeDef gDate;
+    RTC_TimeTypeDef gTime;
+    strcpy((char *)start, "11:11:11 11/11/2020 10");
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
     SystemClock_Config();
     HAL_Init();
+    MX_USART1_UART_Init();
+    MX_RTC_Init();
+
+    //HAL_UART_Receive(&huart1, data, 21, HAL_MAX_DELAY);
+    readStart(&hrtc, &gTime, &gDate, start);
+    int timestamp_func;
+    timestamp_func = unix_timestamp(&gTime, &gDate);
 
     LED_GPIO_CLK_ENABLE();
 
@@ -60,6 +90,13 @@ int main(void) {
         flashEraseSector(11);
         flashRead(0, test_read, 5, DATA_TYPE_8);
 
+        HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+
+        snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
+        snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
+        HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
         HAL_Delay(1000);
     }
 }
@@ -101,6 +138,91 @@ void SystemClock_Config(void) {
     /** Enables the Clock Security System
      */
     HAL_RCC_EnableCSS();
+}
+
+static void MX_USART1_UART_Init(void) {
+
+    huart1.Instance = USART1;
+    huart1.Init.BaudRate = 115200;
+    huart1.Init.WordLength = UART_WORDLENGTH_8B;
+    huart1.Init.StopBits = UART_STOPBITS_1;
+    huart1.Init.Parity = UART_PARITY_NONE;
+    huart1.Init.Mode = UART_MODE_TX_RX;
+    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart1) != HAL_OK) {
+        Error_Handler();
+    }
+}
+
+static void MX_RTC_Init(void) {
+
+    /* USER CODE BEGIN RTC_Init 0 */
+
+    /* USER CODE END RTC_Init 0 */
+
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef sDate = {0};
+    RTC_AlarmTypeDef sAlarm = {0};
+
+    /* USER CODE BEGIN RTC_Init 1 */
+
+    /* USER CODE END RTC_Init 1 */
+    /** Initialize RTC Only
+     */
+    hrtc.Instance = RTC;
+    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+    hrtc.Init.AsynchPrediv = 127;
+    hrtc.Init.SynchPrediv = 255;
+    hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+    hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+        Error_Handler();
+    }
+
+    /* USER CODE BEGIN Check_RTC_BKUP */
+
+    /* USER CODE END Check_RTC_BKUP */
+
+    /** Initialize RTC and set the Time and Date
+     */
+    sTime.Hours = 0x20;
+    sTime.Minutes = 0x10;
+    sTime.Seconds = 0x07;
+    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+
+    sDate.WeekDay = RTC_WEEKDAY_SATURDAY;
+    sDate.Month = RTC_MONTH_DECEMBER;
+    sDate.Date = 0x11;
+    sDate.Year = 0x05;
+
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Enable the Alarm A
+     */
+    sTime.Hours = 0x03;
+    sTime.Minutes = 0x10;
+    sTime.Seconds = 0x07;
+    sAlarm.AlarmTime.SubSeconds = 0x0;
+    sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+    sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+    sAlarm.AlarmDateWeekDay = 0x3;
+    sAlarm.Alarm = RTC_ALARM_A;
+    if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN RTC_Init 2 */
+
+    /* USER CODE END RTC_Init 2 */
 }
 
 void SysTick_Handler(void) {
