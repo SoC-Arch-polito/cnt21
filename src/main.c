@@ -38,7 +38,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 
-uint8_t test_write[5] = {0x11, 0x22, 0x33, 0x44, 0x55};
+uint8_t test_write[5] = {17, 0x22, 0x33, 0x44, 0x55};
 uint8_t test_read[5];
 
 static void MX_USART1_UART_Init(void);
@@ -67,6 +67,7 @@ int main(void) {
     //HAL_UART_Receive(&huart1, data, 21, HAL_MAX_DELAY);
     readStart(&hrtc, &gTime, &gDate, start);
     int timestamp_func;
+    int read_timestamp_func;
     timestamp_func = unix_timestamp(&gTime, &gDate);
 
     LED_GPIO_CLK_ENABLE();
@@ -83,12 +84,13 @@ int main(void) {
     flashWrite(0, test_write, 5, DATA_TYPE_8);
 
     while (1) {
+        uint32_t to_write[10];
         HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
 
         flashRead(0, test_read, 5, DATA_TYPE_8);
-        flashWrite(10, test_write, 5, DATA_TYPE_8);
-        flashEraseSector(11);
-        flashRead(0, test_read, 5, DATA_TYPE_8);
+        flashWrite(10, &timestamp_func, 1, DATA_TYPE_32);
+        // flashEraseSector(11);
+        flashRead(10, &read_timestamp_func, 5, DATA_TYPE_32);
 
         HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
         HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
@@ -97,7 +99,7 @@ int main(void) {
         snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
         HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
         HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
-        HAL_Delay(1000);
+        HAL_Delay(10000);
     }
 }
 
