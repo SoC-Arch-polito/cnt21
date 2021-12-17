@@ -24,8 +24,5 @@ void flashRead(uint32_t idx, void *rdBuf, uint32_t Nsize, DataTypeDef dataType);
 
 
 int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate);
-void readStart(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint8_t start[]);
-int incrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate);
-int decrementNumber(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate);
-void setNumber(uint16_t this_number);
-void setMaxNumber(uint16_t this_max_number);
+void start(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint8_t start[]);
+int updateNumber(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t number);
