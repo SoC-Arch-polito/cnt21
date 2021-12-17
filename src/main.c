@@ -1,7 +1,6 @@
 #include "stdio.h"
 #include "main.h"
-#include "flash.h"
-#include "rtc.h"
+#include "log.h"
 #include "string.h"
 #include "time.h"
 #define F4 1
@@ -70,6 +69,7 @@ int main(void) {
     int timestamp_func;
     int read_timestamp_func;
     timestamp_func = unix_timestamp(&gTime, &gDate);
+    setMaxNumber(11);
 
     // LED_GPIO_CLK_ENABLE();
 
@@ -96,7 +96,10 @@ int main(void) {
         HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
         HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
 
-        incrementNumber(&gTime, &gDate);
+        int time = incrementNumber(&gTime, &gDate);
+        if(time == -1){
+            return -1;
+        }
 
         // snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
         // snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
