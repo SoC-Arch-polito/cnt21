@@ -2,6 +2,7 @@
 #include "string.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 struct COMM_Handle *phcomm;
 static uint8_t buf[0x20];
@@ -21,6 +22,7 @@ static void txCpltCback(UART_HandleTypeDef *huart) {
 
 static void rxCpltCback(UART_HandleTypeDef *huart) {
     int len = 0, i;
+    bool cvrted;
 
     GAL_UART_Transmit(buf + buf_cnt + len, 0x1); // echo back
 
@@ -31,14 +33,22 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
         // do things
         if (!strncmp((char *)buf, "set", 0x3) && buf[0x3] == ' ') {
-            setValue = atol((char *)buf + 4);
-            for (i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] < '9'); i++) {
+            for (cvrted = false, i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] < '9'); i++) {
+
+                if (!cvrted) {
+                    cvrted = true;
+                    setValue = atol((char *)buf + 4);
+                }
+
                 buf[buf_cnt + 2 + 6 + i] = buf[i];
             }
 
-            buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
-            strcpy((char *)buf + buf_cnt + 2, "New value");
-            buf[buf_cnt + 9 + 2] = ' ';
+            if (cvrted) {
+                buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
+                strcpy((char *)buf + buf_cnt + 2, "New value");
+                buf[buf_cnt + 9 + 2] = ' ';
+            }
+
         } else if (!strncmp((char *)buf, "get", 0x3)) {
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
             send_etx = 1;
