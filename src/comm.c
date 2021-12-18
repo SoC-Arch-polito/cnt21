@@ -1,70 +1,58 @@
 #include "comm.h"
-
-#define XMIT_CONST_ARRAY(_arr) (GAL_UART_Transmit_DMA((uint8_t *)_arr, sizeof(_arr)))
-#define XMITSYNC_CONST_ARRAY(_arr) (GAL_UART_Transmit((uint8_t *)_arr, sizeof(_arr)))
-
-#define STX 0x02
-#define ETX 0x03
-
-typedef enum cmd {
-    SETC = 0x0A,
-    GETC = 0xA0,
-    DOWN = 0xAA,
-    ACKX = 0xDD
-} cmd_t;
-
-enum fields_e {
-    F_STX = 0x0,
-    F_CMD = 0x1,
-    F_LEN = 0x2,
-    F_BUF = 0x6,
-    F_ETX = 0xa
-};
+#include "string.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 struct COMM_Handle *phcomm;
 static uint8_t buf[0x20];
 static uint8_t send_etx = 0;
-static const uint8_t ACK_FRAME[] = { STX, ACKX, ETX };
+static uint8_t buf_cnt = 0;
+static volatile uint32_t setValue = 0;
 
 static void txCpltCback(UART_HandleTypeDef *huart) {
 
     if (send_etx) {
-        GAL_UART_Transmit_DMA(&buf[F_ETX], 0x1);
+        buf[0] = '\n';
+        GAL_UART_Transmit_DMA(&buf[0], 0x1);
         send_etx = 0;
     }
 
 }
 
 static void rxCpltCback(UART_HandleTypeDef *huart) {
+    int len = 0, i;
 
-    if (buf[F_STX] != STX) {
-        GAL_UART_AsyncRecv(buf, F_ETX + 1); // asking again for everything
-        return;
-    }
+    GAL_UART_Transmit(buf + buf_cnt + len, 0x1); // echo back
 
-    if (buf[F_CMD] == SETC) {
-        // settings received, set it up
+    if (buf[buf_cnt] == '\r') {
 
-        // sending ACK
-        if (buf[F_ETX] == ETX) {
-            XMIT_CONST_ARRAY(ACK_FRAME);
+        buf[buf_cnt + 0] = '\0';
+        buf[buf_cnt + 1] = '\n';
+
+        // do things
+        if (!strncmp((char *)buf, "set", 0x3) && buf[0x3] == ' ') {
+            setValue = atol((char *)buf + 4);
+            for (i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] < '9'); i++) {
+                buf[buf_cnt + 2 + 6 + i] = buf[i];
+            }
+
+            buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
+            strcpy((char *)buf + buf_cnt + 2, "New value");
+            buf[buf_cnt + 9 + 2] = ' ';
+        } else if (!strncmp((char *)buf, "get", 0x3)) {
+            GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
+            send_etx = 1;
+            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, phcomm->SrcMemory.size);
+            len = -2;
         }
+        
+        buf[buf_cnt + len + 1] = '\n';
+        GAL_UART_Transmit_DMA(buf + buf_cnt, len + 2); 
+        buf_cnt = 0xff;
+    } 
 
-    } else if (buf[F_CMD] == GETC) {
+    GAL_UART_AsyncRecv(buf + ++buf_cnt, 0x1);
 
-        // Sending ACK
-        XMITSYNC_CONST_ARRAY(ACK_FRAME);
-
-        // Sending new frame containing SrcMemory data
-        buf[F_CMD] = DOWN;
-        *((uint32_t *)(buf + F_LEN)) = 0x00000000 | phcomm->SrcMemory.size;
-        GAL_UART_Transmit(buf, F_LEN + 4);
-
-        send_etx = 1; // At 1, after transmission complete, ETX will be sent
-        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, phcomm->SrcMemory.size);
-    }
-
-    GAL_UART_AsyncRecv(buf, F_ETX + 1); // asking again for everything
 }
 
 void COMM_Init(struct COMM_Handle *hcomm) {
@@ -98,5 +86,5 @@ void COMM_Deinit() {
 }
 
 void COMM_StartListen() {
-    GAL_UART_AsyncRecv(buf, F_ETX + 1);
+    GAL_UART_AsyncRecv(buf, 1); 
 }

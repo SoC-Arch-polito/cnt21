@@ -1,5 +1,7 @@
 #include "main.h"
 #include "led.h"
+#include "comm.h"
+
 #define F4 1
 
 #if F0
@@ -27,26 +29,31 @@
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
-int main(void)
-{ 
-  SystemInit();
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-  SystemClock_Config();
-  HAL_Init();
-  
-  // Init LED
-  MX_GPIO_Init();
-  
-  int i = 0;
-  while (1)
-  {
-    if(i++%2 == 0)
-      turn_on_red_led();
-    else
-      turn_off_red_led();
-      
-    HAL_Delay(500);
-  }
+int main(void) {
+	struct COMM_Handle hcomm;
+
+    SystemInit();
+    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+    SystemClock_Config();
+    HAL_Init();
+
+    // Init LED
+    MX_GPIO_Init();
+
+
+	// Init COMM
+	COMM_Init(&hcomm);
+	COMM_StartListen();
+
+    int i = 0;
+    while (1) {
+        if (i++ % 2 == 0)
+            turn_on_red_led();
+        else
+            turn_off_red_led();
+
+        HAL_Delay(500);
+    }
 }
 
 void SystemClock_Config(void) {
