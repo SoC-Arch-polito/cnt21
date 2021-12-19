@@ -21,8 +21,10 @@ static void txCpltCback(UART_HandleTypeDef *huart) {
 }
 
 static void rxCpltCback(UART_HandleTypeDef *huart) {
-    int len = 0, i;
+    int len = 0, i, j;
     bool cvrted;
+    uint8_t *pbuf;
+    uint16_t n;
 
     GAL_UART_Transmit(buf + buf_cnt + len, 0x1); // echo back
 
@@ -32,21 +34,61 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
         buf[buf_cnt + 1] = '\n';
 
         // do things
-        if (!strncmp((char *)buf, "set", 0x3) && buf[0x3] == ' ') {
-            for (cvrted = false, i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] < '9'); i++) {
+        if (!strncmp((char *)buf, "set", 0x3)) {
 
-                if (!cvrted) {
-                    cvrted = true;
-                    setValue = atol((char *)buf + 4);
+            if (!strncmp((char *)(buf + 0x3), "_time", 0x5)) {
+                for (pbuf = buf + 0x9, i = 0x0; pbuf < buf + buf_cnt && i < 0x6; i++, pbuf++) {
+
+                    for (j = 0; j < (i == 2 ? 4 : 2) && (*pbuf >= '0' && *pbuf <= '9'); j++, pbuf++);
+
+                    if (j != (i == 2 ? 4 : 2) || (i < 0x5 && ((j == 2 && *pbuf != '/') || (j == 4 && *pbuf != ' ')))) {
+                        break;
+                    } else {
+
+                        *pbuf = '\0';
+                        n = atoi((char *)(pbuf - j));
+                        *pbuf = '/';
+
+                        if (i == 0 && (n <= 0 || n > 31))
+                            break;
+                        else if (i == 1 && (n <= 0 || n > 12)) {
+                            break;
+                        } else if (i == 2 && (n < 1970 || n >= 2038)) {
+                            break;
+                        } else if (i == 3 && (n < 0 || n > 23)) {
+                            break;
+                        } else if ((i == 4 || i == 5) && (n < 0 || n > 59)) {
+                            break;
+                        }
+                    }
                 }
 
-                buf[buf_cnt + 2 + 6 + i] = buf[i];
-            }
+                buf_cnt = 0;
+                if (i == 0x6) {
+                    strcpy((char *)buf, "\r\nDONE!\r\n");
+                    len = 7;
+                } else {
+                    strcpy((char *)buf, "\r\nINVALID FORMAT!\r\n");
+                    len = 17;
+                }
 
-            if (cvrted) {
-                buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
-                strcpy((char *)buf + buf_cnt + 2, "New value");
-                buf[buf_cnt + 9 + 2] = ' ';
+            } else if (buf[0x3] == ' ') {
+
+                for (cvrted = false, i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] <= '9'); i++) {
+
+                    if (!cvrted) {
+                        cvrted = true;
+                        setValue = atol((char *)buf + 4);
+                    }
+
+                    buf[buf_cnt + 2 + 6 + i] = buf[i];
+                }
+
+                if (cvrted) {
+                    buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
+                    strcpy((char *)buf + buf_cnt + 2, "New value");
+                    buf[buf_cnt + 9 + 2] = ' ';
+                }
             }
 
         } else if (!strncmp((char *)buf, "get", 0x3)) {
