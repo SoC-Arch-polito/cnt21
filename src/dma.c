@@ -9,13 +9,13 @@ void GAL_DMA_Init(struct GAL_DMA_Data *ddma) {
     }
 
     pddma = ddma;
-    __DMA1_CLK_DISABLE();
+    __DMA1_CLK_ENABLE();
 
     ddma->hdma.Instance = DMA1_Stream1;
     ddma->hdma.Init.Channel = DMA_CHANNEL_0;
     ddma->hdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
     ddma->hdma.Init.MemInc = DMA_MINC_ENABLE;
-    ddma->hdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE; // TODO: BYTE
+    ddma->hdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     ddma->hdma.Init.Mode = DMA_NORMAL;
     ddma->hdma.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     ddma->hdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
