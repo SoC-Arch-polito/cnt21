@@ -1,5 +1,14 @@
+I2CDisplay: I2CDisplay @i2c1 0x34
 redLed: Miscellaneous.LED @ gpioPortD
 greenLed: Miscellaneous.LED @ gpioPortD
 gpioPortD:
     6 -> redLed@0
     7 -> greenLed@0
+
+flash_ctrl: MTD.STM32F4_FlashInterfaceReg @ sysbus <0x40023C00, +0x400>
+    flashMemory: flash
+
+IRSensorEnter: IRSensor @ gpioPortD
+    -> gpioPortD@8
+IRSensorExit: IRSensor @ gpioPortD
+    -> gpioPortD@9
