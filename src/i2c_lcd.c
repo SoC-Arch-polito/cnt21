@@ -1,4 +1,5 @@
 #include "i2c_lcd.h"
+#include <stdio.h>
 #include "stm32f4xx_hal.h"
 
 extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
@@ -25,6 +26,9 @@ extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
 #define LCD_NOBACKLIGHT 0x00
 #define EN 0x04
 #define RS 0x01
+
+// https://maxpromer.github.io/LCD-Character-Creator/
+char customCharPerson[]= {0x0E, 0x0E, 0x04, 0x0E, 0x15, 0x04, 0x0A, 0x0A};
 
 void lcd_create_char(char customChar[], int location){
 	location &= 0x7; // we only have 8 locations 0-7
@@ -108,6 +112,9 @@ void lcd_init (void)
 	lcd_send_cmd (LCD_INCREMENT_CURSER);    //Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift)
 	HAL_Delay(1);
 	lcd_send_cmd (LCD_DISP_ON_CURS_OFF);    //Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits)
+
+	// Send person custom char
+ 	lcd_create_char(customCharPerson, 1);
 }
 
 void lcd_send_string (char *str)
@@ -135,6 +142,11 @@ void lcd_set_text_downloading(){
 void lcd_set_number_people(int n_people){
     char num_char[15];
     sprintf(num_char, "%d", n_people);
-
-    lcd_send_two_string("Number of people:", num_char);
+	
+	lcd_go_home();
+	lcd_send_string("Number of people");
+	lcd_put_cur(1,0);
+  	lcd_send_custom_char(1);
+	lcd_send_string(" ");
+    lcd_send_string(num_char);
 }

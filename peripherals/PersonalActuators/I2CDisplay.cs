@@ -169,6 +169,7 @@ namespace Antmicro.Renode.Peripherals
                             byte fondLine = lcdFont[0];
                             if(charPos >=0 && charPos <= 7) {
                                 fondLine = customChar[charPos*5 + ot];
+
                             } else if (charPos - 32 >= 0 && charPos - 32 <= 93){
                                 fondLine = lcdFont[(charPos - 32)*5 + ot];
                             }
@@ -194,18 +195,6 @@ namespace Antmicro.Renode.Peripherals
             DateTime startTime = DateTime.Now;
             public void updateView(){
                 needsUpdate = true;
-                // try
-                // {
-                //     Double elapsedMillisecs = ((TimeSpan)(DateTime.Now - startTime)).TotalMilliseconds;
-                //     if(needsUpdate){
-                //         this.Invalidate(true);
-                //         startTime = DateTime.Now;
-                //     }
-                // } catch (Exception e)
-                // {
-                //     // recover from exception
-                //     i2CDisplay.Log(LogLevel.Error, "Ahhh! Exception from view update!");
-                // }
             }
 
             void clearDisplay(){
@@ -258,7 +247,7 @@ namespace Antmicro.Renode.Peripherals
                         } else {
                             // Custom char read
                             byte read = (byte)(data[1]&0xF0 | ((data[3]&0xF0) >> 4));
-                            int offset = customCharState - State.READ0;
+                            int offset = 7-(customCharState - State.READ0);
                             customChar[customCharWritePos*5] |= (byte)(((read&0x10) >> 4) << offset);
                             customChar[customCharWritePos*5 + 1] |= (byte)(((read&0x8) >> 3) << offset);
                             customChar[customCharWritePos*5 + 2] |= (byte)(((read&0x4) >> 2) << offset);
@@ -268,7 +257,7 @@ namespace Antmicro.Renode.Peripherals
                             if(customCharState == State.READ7){
                                 customCharState = State.NOREAD;
                                 for(int i = 0; i <  5; i++){
-                                    i2CDisplay.Log(LogLevel.Noisy, "Custom read " + i + " " + customChar[i].ToString("X2"));
+                                    i2CDisplay.Log(LogLevel.Noisy, "Custom read " + i + " " + customChar[customCharWritePos*5+i].ToString("X2"));
                                 }
                                 i2CDisplay.Log(LogLevel.Noisy, "Custom char read");
                             } else {

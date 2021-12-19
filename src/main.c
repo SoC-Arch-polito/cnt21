@@ -45,9 +45,10 @@ int main(void)
 
   lcd_init();
 
+int i = 0;
   while (1)
   {
-    lcd_set_number_people(10);
+    lcd_set_number_people(i++);
 
     HAL_Delay(1000);
   }
