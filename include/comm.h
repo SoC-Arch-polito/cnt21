@@ -17,7 +17,7 @@ struct COMM_Handle {
 
     struct {
         uint8_t *basePtr;
-        uint16_t size;
+        uint32_t size;
     } SrcMemory;
 
     struct callback_s {

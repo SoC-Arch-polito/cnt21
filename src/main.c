@@ -30,7 +30,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
 int main(void) {
-	struct COMM_Handle hcomm;
+    struct COMM_Handle hcomm;
 
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
@@ -42,6 +42,12 @@ int main(void) {
 
 
 	// Init COMM
+	hcomm.SrcMemory.basePtr = (uint8_t *)0x08000000;
+	hcomm.SrcMemory.size = 0x10000;
+	hcomm.Callback.newValueSet = NULL;
+	hcomm.Callback.onNewSysDateTime = NULL;
+	hcomm.Callback.onUARTDownload = NULL;
+
 	COMM_Init(&hcomm);
 	COMM_StartListen();
 

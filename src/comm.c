@@ -11,14 +11,21 @@ static uint8_t buf[0x20];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
 static volatile uint32_t setValue = 0;
+static uint32_t rem;
 
 static void txCpltCback(UART_HandleTypeDef *huart) {
+    static uint8_t ts;
 
-    if (send_etx) {
-        buf[0] = '\n';
-        GAL_UART_Transmit_DMA(&buf[0], 0x1);
-        send_etx = 0;
+    if (send_etx > 1) {
+        send_etx--;
+        rem = phcomm->SrcMemory.size - 0x400;
+        ts = rem <= 0x400 ? 1 : (rem / 0x400 + 1);
+        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, ts == 1 ? rem : 0x400);
+    } else if (send_etx == 1) {
         INVOKE_CB(phcomm->Callback.onUARTDownload, true);
+        buf[0] = '\n';
+        send_etx--;
+        GAL_UART_Transmit_DMA(&buf[0], 0x1);
     }
 
 }
@@ -95,8 +102,11 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
         } else if (!strncmp((char *)buf, "get", 0x3)) {
             INVOKE_CB(phcomm->Callback.onUARTDownload, false);
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
-            send_etx = 1;
-            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, phcomm->SrcMemory.size);
+
+            send_etx = phcomm->SrcMemory.size <= 0x400 ? 1 : (phcomm->SrcMemory.size / 0x400 + 1);
+            rem = phcomm->SrcMemory.size - 0x400;
+            // send_etx = phcomm->SrcMemory.size / 0x400;
+            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0x400);
             len = -2;
         }
         
@@ -116,10 +126,6 @@ void COMM_Init(struct COMM_Handle *hcomm) {
     }
     
     phcomm = hcomm;
-
-    hcomm->Callback.newValueSet = NULL;
-    hcomm->Callback.onNewSysDateTime = NULL;
-    hcomm->Callback.onUARTDownload = NULL;
 
     hcomm->ddma.IRQ_Priority.preempt = 0;
     hcomm->ddma.IRQ_Priority.sub = 0;
