@@ -7,18 +7,18 @@
 
 struct GAL_UART_Data {
 
+    struct IRQPriority_s IRQ_Priority;
+
     struct {
-        /* The Preemption Priority allows an ISR to be interrupted (or preempted) 
-        by a higher IRQ priority. If you don't want preemption at all, set it to
-        0 (hightest priority). */
-        uint32_t preempt;
+        /* UART receive complete callback */
+        void (*RxCompleteCallback) (UART_HandleTypeDef *huart);
 
-        /* The Sub Priority is the classical priority between interrupts.
-        Lower value has a higher priority than a higher one. */
-        uint32_t sub;
-    } IRQ_Priority;
+        /* UART transfer complete callback */
+        void (*TxCompleteCallback) (UART_HandleTypeDef *huart);
 
-    struct GAL_UART_Callback Callback;
+        /* UART transfer error callback */
+        void (*ErrorCallback) (UART_HandleTypeDef *huart);
+    } Callback;
 
     UART_HandleTypeDef huart;
     HAL_StatusTypeDef last_status;

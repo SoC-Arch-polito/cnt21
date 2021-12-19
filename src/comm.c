@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct COMM_Handle *phcomm;
+#define INVOKE_CB(cb, args...) {if (cb) (cb(args));}
+
+static struct COMM_Handle *phcomm;
 static uint8_t buf[0x20];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
@@ -16,6 +18,7 @@ static void txCpltCback(UART_HandleTypeDef *huart) {
         buf[0] = '\n';
         GAL_UART_Transmit_DMA(&buf[0], 0x1);
         send_etx = 0;
+        INVOKE_CB(phcomm->Callback.onUARTDownload, true);
     }
 
 }
@@ -79,6 +82,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                     if (!cvrted) {
                         cvrted = true;
                         setValue = atol((char *)buf + 4);
+                        INVOKE_CB(phcomm->Callback.newValueSet, setValue);
                     }
 
                     buf[buf_cnt + 2 + 6 + i] = buf[i];
@@ -92,6 +96,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
             }
 
         } else if (!strncmp((char *)buf, "get", 0x3)) {
+            INVOKE_CB(phcomm->Callback.onUARTDownload, false);
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
             send_etx = 1;
             GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, phcomm->SrcMemory.size);

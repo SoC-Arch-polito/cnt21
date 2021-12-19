@@ -3,23 +3,15 @@
 
 #include "stm32f4xx.h"
 
-struct GAL_UART_Callback {
-    /* UART receive complete callback */
-    void (*RxCompleteCallback) (UART_HandleTypeDef *huart);
+struct IRQPriority_s {
+    /* The Preemption Priority allows an ISR to be interrupted (or preempted) 
+    by a higher IRQ priority. If you don't want preemption at all, set it to
+    0 (hightest priority). */
+    uint32_t preempt;
 
-    /* UART transfer complete callback */
-    void (*TxCompleteCallback) (UART_HandleTypeDef *huart);
-
-    /* UART transfer error callback */
-    void (*ErrorCallback) (UART_HandleTypeDef *huart);
-};
-
-struct GAL_DMA_Callback {
-    /* DMA transfer complete callback */
-    void (*XferCompleteCallback)(struct __DMA_HandleTypeDef *hdma); 
-
-    /* DMA transfer error callback */
-    void (*XferErrorCallback)(struct __DMA_HandleTypeDef *hdma); 
+    /* The Sub Priority is the classical priority between interrupts.
+    Lower value has a higher priority than a higher one. */
+    uint32_t sub;
 };
 
 #endif
