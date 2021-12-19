@@ -117,6 +117,10 @@ void COMM_Init(struct COMM_Handle *hcomm) {
     
     phcomm = hcomm;
 
+    hcomm->Callback.newValueSet = NULL;
+    hcomm->Callback.onNewSysDateTime = NULL;
+    hcomm->Callback.onUARTDownload = NULL;
+
     hcomm->ddma.IRQ_Priority.preempt = 0;
     hcomm->ddma.IRQ_Priority.sub = 0;
     hcomm->ddma.Callback.XferCompleteCallback = NULL;
