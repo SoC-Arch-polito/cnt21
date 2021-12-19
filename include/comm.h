@@ -8,6 +8,7 @@
 
 #define ONNEW_VALUE_SET_CB(__fnc__name__, __arg__name__)   void (__fnc__name__)(uint32_t __arg__name__)
 #define ONUART_DOWNLOAD_CB(__fnc__name__, __arg__name__)   void (__fnc__name__)(bool __arg__name__)
+#define ONNEW_SYSDTTIME_CB(__fnc__name__, __arg__name__)   void (__fnc__name__)(const char *__arg__name__)
 
 struct COMM_Handle {
 
@@ -28,6 +29,11 @@ struct COMM_Handle {
         and when a GET transfer finishes.
         @param xferFinished: true if the transfer is finished, false otherwise */
         ONUART_DOWNLOAD_CB(*onUARTDownload, xferFinished);
+
+        /* Callback invoked when a SET_TIME command is requested via UART.
+        @param newDateTime: string with the new date time to be set.
+        Format: dd/mm/yyyy hh/mm/ss */
+        ONNEW_SYSDTTIME_CB(*onNewSysDateTime, newDateTime);
     } Callback;
 
 };

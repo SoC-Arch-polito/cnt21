@@ -40,6 +40,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
         if (!strncmp((char *)buf, "set", 0x3)) {
 
             if (!strncmp((char *)(buf + 0x3), "_time", 0x5)) {
+
                 for (pbuf = buf + 0x9, i = 0x0; pbuf < buf + buf_cnt && i < 0x6; i++, pbuf++) {
 
                     for (j = 0; j < (i == 2 ? 4 : 2) && (*pbuf >= '0' && *pbuf <= '9'); j++, pbuf++);
@@ -52,22 +53,18 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                         n = atoi((char *)(pbuf - j));
                         *pbuf = '/';
 
-                        if (i == 0 && (n <= 0 || n > 31))
-                            break;
-                        else if (i == 1 && (n <= 0 || n > 12)) {
-                            break;
-                        } else if (i == 2 && (n < 1970 || n >= 2038)) {
-                            break;
-                        } else if (i == 3 && (n < 0 || n > 23)) {
-                            break;
-                        } else if ((i == 4 || i == 5) && (n < 0 || n > 59)) {
-                            break;
-                        }
+                        if (i == 0 && (n <= 0 || n > 31)) break;
+                        else if (i == 1 && (n <= 0 || n > 12)) break;
+                        else if (i == 2 && (n < 1970 || n >= 2038)) break;
+                        else if (i == 3 && (n < 0 || n > 23)) break;
+                        else if ((i == 4 || i == 5) && (n < 0 || n > 59)) break;
+                        
                     }
                 }
 
                 buf_cnt = 0;
                 if (i == 0x6) {
+                    INVOKE_CB(phcomm->Callback.onNewSysDateTime, (const char *)(buf + 0x9));
                     strcpy((char *)buf, "\r\nDONE!\r\n");
                     len = 7;
                 } else {
