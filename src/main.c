@@ -5,7 +5,9 @@
 #include "time.h"
 #include "i2c_lcd.h"
 #include "led.h"
+#include "comm.h"
 #include "ir.h"
+
 #define F4 1
 
 #if F0
@@ -54,6 +56,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_RTC_Init();
 
+  struct COMM_Handle hcomm;
+
   uint8_t start_string[23];
   RTC_DateTypeDef gDate;
   RTC_TimeTypeDef gTime;
@@ -62,13 +66,22 @@ int main(void)
   lcd_init();
   start(&hrtc, &gTime, &gDate, start_string);
 
-int i = 0;
+  // Init COMM
+  hcomm.SrcMemory.basePtr = (uint8_t *)0x08000000;
+  hcomm.SrcMemory.size = 0x10000;
+  hcomm.Callback.newValueSet = NULL;
+  hcomm.Callback.onNewSysDateTime = NULL;
+  hcomm.Callback.onUARTDownload = NULL;
+  
+  COMM_Init(&hcomm);
+  COMM_StartListen();
+
+  int i = 0;
   while (1)
   {
     lcd_set_number_people(i++);
     updateNumber(&hrtc, &gTime, &gDate, 11);
     updateNumber(&hrtc, &gTime, &gDate, 12);
-
     HAL_Delay(1000);
   }
 }
