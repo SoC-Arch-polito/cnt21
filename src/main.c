@@ -76,12 +76,13 @@ int main(void)
   COMM_Init(&hcomm);
   COMM_StartListen();
 
+  int i = 0;
   while (1)
   {
+    lcd_set_number_people(i++);
     updateNumber(&hrtc, &gTime, &gDate, 11);
     updateNumber(&hrtc, &gTime, &gDate, 12);
-	lcd_set_number_people(10);
-	HAL_Delay(1000);
+    HAL_Delay(1000);
   }
 }
 
