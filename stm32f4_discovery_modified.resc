@@ -11,16 +11,17 @@ include @./peripherals/PersonalActuators/IRSensor.cs
 machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
 machine LoadPlatformDescription @./peripherals/peripheral_definition.repl
 machine LoadPlatformDescription @./peripherals/ext_peripheral.repl
-emulation CreateServerSocketTerminal 1234 "externalUART" false
-connector Connect uart1 externalUART
-showAnalyzer uart1
 
 cpu PerformanceInMips 125
 
-emulation CreateUartPtyTerminal "externalUART" "/tmp/uart4" true
-:emulation CreateServerSocketTerminal 1234 "externalUART" false
+emulation CreateServerSocketTerminal 1234 "externalUART" false
 connector Connect uart4 externalUART
 showAnalyzer uart4
+
+:emulation CreateUartPtyTerminal "externalUART" "/tmp/uart4" true
+:emulation CreateServerSocketTerminal 1234 "externalUART" false
+:connector Connect uart4 externalUART
+:showAnalyzer uart4
 
 macro reset
 """
