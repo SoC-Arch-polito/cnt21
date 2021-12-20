@@ -11,16 +11,12 @@ static uint8_t buf[0x20];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
 static volatile uint32_t setValue = 0;
-static uint32_t rem;
 
 static void txCpltCback(UART_HandleTypeDef *huart) {
-    static uint8_t ts;
 
     if (send_etx > 1) {
         send_etx--;
-        rem = phcomm->SrcMemory.size - 0x400;
-        ts = rem <= 0x400 ? 1 : (rem / 0x400 + 1);
-        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, ts == 1 ? rem : 0x400);
+        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
     } else if (send_etx == 1) {
         INVOKE_CB(phcomm->Callback.onUARTDownload, true);
         buf[0] = '\n';
@@ -103,10 +99,8 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
             INVOKE_CB(phcomm->Callback.onUARTDownload, false);
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
 
-            send_etx = phcomm->SrcMemory.size <= 0x400 ? 1 : (phcomm->SrcMemory.size / 0x400 + 1);
-            rem = phcomm->SrcMemory.size - 0x400;
-            // send_etx = phcomm->SrcMemory.size / 0x400;
-            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0x400);
+            send_etx = (phcomm->SrcMemory.size >> 16) + 1;
+            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
             len = -2;
         }
         

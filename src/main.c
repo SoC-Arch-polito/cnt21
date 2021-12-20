@@ -14,13 +14,11 @@
 
 // Static reference for I2C
 static I2C_HandleTypeDef hi2c1;
-static UART_HandleTypeDef huart1;
 static RTC_HandleTypeDef hrtc;
 
 void SystemClock_Config(void);
 static void MX_I2C1_Init(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
 static void update_interface();
 static void disable_IRQ();
@@ -38,7 +36,6 @@ static RTC_TimeTypeDef gTime;
 static struct COMM_Handle hcomm;
 
 int main(void) {
-	uint8_t datestamp[23];
 
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
@@ -48,10 +45,7 @@ int main(void) {
     MX_GPIO_Init();
     // Setup I2C
     MX_I2C1_Init();
-    // MX_USART1_UART_Init(); // TODO: to remove
     MX_RTC_Init();
-	// log_rtc_setup(&hrtc, &gTime, &gDate, "20/12/2021 16/04/00");
-    
 
     // Initilization of the counters
     number_people = 0;
@@ -135,20 +129,6 @@ ONUART_DOWNLOAD_CB(onUartDownload, xferDone) {
     } else {
         disable_IRQ();
         lcd_set_text_downloading();
-    }
-}
-
-static void MX_USART1_UART_Init(void) {
-    huart1.Instance = USART1;
-    huart1.Init.BaudRate = 115200;
-    huart1.Init.WordLength = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits = UART_STOPBITS_1;
-    huart1.Init.Parity = UART_PARITY_NONE;
-    huart1.Init.Mode = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart1) != HAL_OK) {
-        Error_Handler();
     }
 }
 
