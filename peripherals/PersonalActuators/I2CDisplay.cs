@@ -41,7 +41,7 @@ namespace Antmicro.Renode.Peripherals
             while(true){
                 if(display.needsToBeUpdate()){
                     display.Invalidate();
-                    Thread.Sleep(30);
+                    Thread.Sleep(100);
                 }
             }
         }

@@ -4,20 +4,20 @@
 #include "stm32f4xx_hal.h"
 #include "time.h"
 
-static int start_number;
+static uint16_t number;
 static uint16_t i = 0;
 
 static uint32_t MY_SectorAddrs;
 static uint8_t MY_SectorNum;
 
-int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
+int log_unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
     struct tm t;
     int t_of_day;
 
-    t.tm_year = (int)gDate->Year + 100; // Year - 1900
+    t.tm_year = (int)gDate->Year + 2000 - 1900; // Year - 1900
     t.tm_mon = (int)gDate->Month - 1;   // Month, where 0 = jan
     t.tm_mday = (int)gDate->Date;       // Day of the month
-    t.tm_hour = (int)gTime->Hours;
+    t.tm_hour = (int)gTime->Hours + (gTime->TimeFormat == RTC_HOURFORMAT12_PM ? 12 : 0);
     t.tm_min = (int)gTime->Minutes;
     t.tm_sec = (int)gTime->Seconds;
     t.tm_isdst = -1; // Is DST on? 1 = yes, 0 = no, -1 = unknown
@@ -25,15 +25,17 @@ int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
     return t_of_day;
 }
 
-void start(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint8_t start[]) {
+void log_rtc_setup(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, const char *start) {
     int hour, min, sec, day, month, year;
     flashSetSectorAddrs(11, 0x080E0000);
-    HAL_RTC_GetTime(hrtc, gTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(hrtc, gDate, RTC_FORMAT_BIN);
-    sscanf((char *)start, "%d:%d:%d %d/%d/%d %d", &hour, &min, &sec, &day, &month, &year, &start_number);
-    gTime->Hours = hour;
+    // https://community.st.com/s/question/0D53W000004KJtn/cannot-set-time-with-halrtcsettime-on-l412kb-nucleo32-after-init
+    // HAL_RTC_GetDate(hrtc, gDate, RTC_FORMAT_BIN);
+    // HAL_RTC_GetTime(hrtc, gTime, RTC_FORMAT_BIN);
+    sscanf((char *)start, "%d/%d/%d %d/%d/%d", &day, &month, &year, &hour, &min, &sec);
+    gTime->Hours = hour % 12;
     gTime->Minutes = min;
     gTime->Seconds = sec;
+    gTime->TimeFormat = hour > 12 ? RTC_HOURFORMAT12_PM : RTC_HOURFORMAT12_AM;
     HAL_RTC_SetTime(hrtc, gTime, RTC_FORMAT_BIN);
     gDate->Date = day;
     gDate->Month = month;
@@ -41,14 +43,22 @@ void start(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDa
     HAL_RTC_SetDate(hrtc, gDate, RTC_FORMAT_BIN);
 }
 
-int updateNumber(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t number) {
+void log_set_start_number(uint16_t this_number){
+    number = this_number;
+}
+
+int log_update_number(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t this_number, struct COMM_Handle *hcomm) {
     int timestamp;
+
+    number = this_number;
 	HAL_RTC_GetTime(hrtc, gTime, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(hrtc, gDate, RTC_FORMAT_BIN);
-	timestamp = unix_timestamp(gTime, gDate);
+	timestamp = log_unix_timestamp(gTime, gDate);
     flashWrite(i, &timestamp, 1, DATA_TYPE_32);
-    flashWrite(i + 4, &number, 1, DATA_TYPE_16);
-    i = i + 5;
+    flashWrite(i + 4, &this_number, 1, DATA_TYPE_16);
+    hcomm->SrcMemory.size = hcomm->SrcMemory.size + 6;
+    i = i + 6;
+
     return timestamp;
 }
 

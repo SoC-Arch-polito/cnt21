@@ -58,7 +58,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
                         *pbuf = '\0';
                         n = atoi((char *)(pbuf - j));
-                        *pbuf = '/';
+                        *pbuf = (j == 2 ? '/' : ' ');
 
                         if (i == 0 && (n <= 0 || n > 31)) break;
                         else if (i == 1 && (n <= 0 || n > 12)) break;

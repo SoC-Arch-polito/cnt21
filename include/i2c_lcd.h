@@ -1,4 +1,6 @@
-void lcd_init (void);   // initialize lcd
+#include "stm32f4xx_hal.h"
+
+void lcd_init (I2C_HandleTypeDef * i2c_ref);   // initialize lcd
 
 void lcd_create_char(char customChar[], int location);
 

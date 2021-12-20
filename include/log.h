@@ -1,4 +1,6 @@
 #include "stm32f4xx_hal.h"
+#include <stdbool.h>
+#include "comm.h"
 
 //Typedefs
 //1. data size
@@ -23,6 +25,7 @@ void flashWrite(uint32_t idx, void *wrBuf, uint32_t Nsize, DataTypeDef dataType)
 void flashRead(uint32_t idx, void *rdBuf, uint32_t Nsize, DataTypeDef dataType);
 
 
-int unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate);
-void start(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint8_t start[]);
-int updateNumber(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t number);
+int log_unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate);
+void log_rtc_setup(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, const char *start);
+void log_set_start_number(uint16_t this_number);
+int log_update_number(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, uint16_t this_number, struct COMM_Handle *hcomm);

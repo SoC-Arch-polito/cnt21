@@ -3,8 +3,6 @@
 #include "stm32f4xx_hal.h"
 #include "stdio.h"
 
-extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
-
 /*LCD Commands*/
 #define LCD_FUNCTION_SET1      0x31
 #define LCD_FUNCTION_SET2      0x22
@@ -28,8 +26,10 @@ extern I2C_HandleTypeDef hi2c1;  // change your handler here accordingly
 #define EN 0x04
 #define RS 0x01
 
+static I2C_HandleTypeDef *hi2c1;
+
 // https://maxpromer.github.io/LCD-Character-Creator/
-char customCharPerson[]= {0x0E, 0x0E, 0x04, 0x0E, 0x15, 0x04, 0x0A, 0x0A};
+static char customCharPerson[] = {0x0E, 0x0E, 0x04, 0x0E, 0x15, 0x04, 0x0A, 0x0A};
 
 void lcd_create_char(char customChar[], int location){
 	location &= 0x7; // we only have 8 locations 0-7
@@ -52,26 +52,22 @@ void lcd_send_internal(char cmd, int mode){
 	data_t[1] = data_u|mode|LCD_BACKLIGHT;  	//en=0, rs=0 
 	data_t[2] = data_l|mode|LCD_BACKLIGHT|EN;  	//en=1, rs=0
 	data_t[3] = data_l|mode|LCD_BACKLIGHT;  	//en=0, rs=0 
-	HAL_I2C_Master_Transmit (&hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
+	HAL_I2C_Master_Transmit (hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
 }
 
-void lcd_send_cmd (char cmd)
-{
+void lcd_send_cmd (char cmd) {
 	lcd_send_internal(cmd, 0x00);
 }
 
-void lcd_send_data (char data)
-{
+void lcd_send_data (char data) {
 	lcd_send_internal(data, RS);
 }
 
-void lcd_clear (void)
-{
+void lcd_clear (void) {
 	lcd_send_cmd (LCD_CLEAR_DISPLAY);
 }
 
-void lcd_put_cur(int row, int col)
-{
+void lcd_put_cur(int row, int col) {
     switch (row)
     {
         case 0:
@@ -85,12 +81,12 @@ void lcd_put_cur(int row, int col)
     lcd_send_cmd (col);
 }
 
-void lcd_go_home(void){
+void lcd_go_home(void) {
 	lcd_put_cur(0,0);
 }
 
-void lcd_init (void)
-{
+void lcd_init (I2C_HandleTypeDef *i2c_ref) {
+	hi2c1 = i2c_ref;
 	// 4 bit initialisation
 	HAL_Delay(50);  // wait for >40ms
 	lcd_send_cmd (LCD_FUNCTION_SET1);
@@ -118,15 +114,13 @@ void lcd_init (void)
  	lcd_create_char(customCharPerson, 1);
 }
 
-void lcd_send_string (char *str)
-{
+void lcd_send_string (char *str) {
 	while (*str){
 		lcd_send_data (*str++);
 	} 
 }
 
-void lcd_send_two_string (char *str1, char * str2)
-{
+void lcd_send_two_string (char *str1, char * str2) {
     lcd_clear();
 	lcd_go_home();
 	lcd_send_string(str1);
@@ -134,13 +128,14 @@ void lcd_send_two_string (char *str1, char * str2)
 	lcd_send_string(str2);
 }
 
-void lcd_set_text_downloading(){
+void lcd_set_text_downloading() {
     lcd_clear();
     lcd_go_home();
     lcd_send_string("Downloading...");
 }
 
-void lcd_set_number_people(int n_people){
+void lcd_set_number_people(int n_people) {
+    lcd_clear();
     char num_char[15];
     sprintf(num_char, "%d", n_people);
 	
