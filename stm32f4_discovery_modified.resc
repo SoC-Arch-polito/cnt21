@@ -11,6 +11,9 @@ include @./peripherals/PersonalActuators/IRSensor.cs
 machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
 machine LoadPlatformDescription @./peripherals/peripheral_definition.repl
 machine LoadPlatformDescription @./peripherals/ext_peripheral.repl
+emulation CreateServerSocketTerminal 1234 "externalUART" false
+connector Connect uart1 externalUART
+showAnalyzer uart1
 
 cpu PerformanceInMips 125
 
