@@ -79,8 +79,8 @@ int main(void) {
     int i = 0;
     while (1) {
         lcd_set_number_people(i++);
-        updateNumber(&hrtc, &gTime, &gDate, 11);
-        updateNumber(&hrtc, &gTime, &gDate, 12);
+        // updateNumber(&hrtc, &gTime, &gDate, 11);
+        // updateNumber(&hrtc, &gTime, &gDate, 12);
         HAL_Delay(1000);
     }
 }

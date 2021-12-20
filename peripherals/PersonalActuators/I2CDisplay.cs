@@ -21,14 +21,41 @@ namespace Antmicro.Renode.Peripherals
     public class I2CDisplay : II2CPeripheral, IExternal
     {
         DisplayForm display;
+        Thread thread1, thread2;
+        private bool _disposedValue;
 
         public I2CDisplay()
         {
             active = true;
             this.Log(LogLevel.Debug, "Display i2c connected");
-            Thread thread1 = new Thread(StartForm);
+            thread1 = new Thread(StartForm);
             thread1.Start();
             Reset();
+        }
+
+        ~I2CDisplay() => Dispose(false);
+
+        // Public implementation of Dispose pattern callable by consumers.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        // Protected implementation of Dispose pattern.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    display.Close();
+                    thread2.Abort();
+                    thread1.Abort();
+                }
+
+                _disposedValue = true;
+            }
         }
 
         /**
@@ -52,8 +79,8 @@ namespace Antmicro.Renode.Peripherals
         public void StartForm(){
             display = new DisplayForm(this);
             display.Text = "Display 2x" + DisplayForm.numberOfCharPerRow;
-            Thread thread1 = new Thread(UpdateFrom);
-            thread1.Start();
+            thread2 = new Thread(UpdateFrom);
+            thread2.Start();
             display.ShowDialog();
         }
 
