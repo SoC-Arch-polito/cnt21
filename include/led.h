@@ -1,6 +1,6 @@
 #include "stm32f4xx_hal.h"
 
-#define GPIO_BANK GPIOD
+#define GPIO_BANK_LED GPIOD
 #define RED_LED_PIN GPIO_PIN_6
 #define GREEN_LED_PIN GPIO_PIN_7
 
