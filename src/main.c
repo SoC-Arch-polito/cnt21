@@ -173,6 +173,32 @@ static void MX_GPIO_Init(void) {
   HAL_NVIC_EnableIRQ(IR_EXT_HANDLE);
 }
 
+void EXTI9_5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(IR_1_PIN); // Reset the PIN8 Interrupt
+  HAL_GPIO_EXTI_IRQHandler(IR_2_PIN); // Reset the PIN9 Interrupt
+}
+
+/**
+ * @brief Handler to manage the interrupt coming from the two IR sensors
+ * 
+ * @param GPIO_Pin the IR sensor pin
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  switch(GPIO_Pin)
+		{
+		case IR_1_PIN:
+      // TODO: manage counter, increase
+      turn_on_red_led();
+			break;
+		case IR_2_PIN:
+      // TODO: manage counter, decrease
+      turn_off_red_led();
+      break;
+		}
+}
+
 static void MX_RTC_Init(void) {
 
     /* USER CODE BEGIN RTC_Init 0 */
