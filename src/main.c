@@ -3,6 +3,9 @@
 #include "log.h"
 #include "string.h"
 #include "time.h"
+#include "i2c_lcd.h"
+#include "led.h"
+#include "ir.h"
 #define F4 1
 
 #if F0
@@ -27,76 +30,46 @@
 #error "Unsupported STM32 Family"
 #endif
 
-#define LED_PIN GPIO_PIN_5
-#define LED_GPIO_PORT GPIOA
-#define LED_GPIO_CLK_ENABLE() __HAL_RCC_GPIOA_CLK_ENABLE()
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-
-uint8_t test_write[5] = {17, 0x22, 0x33, 0x44, 0x55};
-uint8_t test_read[5];
-
-static void MX_USART1_UART_Init(void);
-static void MX_RTC_Init(void);
-
+// Static reference for I2C
+I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart1;
 RTC_HandleTypeDef hrtc;
 
+void SystemClock_Config(void);
+static void MX_I2C1_Init(void);
+static void MX_GPIO_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_RTC_Init(void);
 
-/**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void) {
-    uint8_t start_string[23];
-    RTC_DateTypeDef gDate;
-    RTC_TimeTypeDef gTime;
-    strcpy((char *)start_string, "11:11:11 11/11/2021 10");
-    SystemInit();
-    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-    SystemClock_Config();
-    HAL_Init();
-    MX_USART1_UART_Init();
-    MX_RTC_Init();
+int main(void)
+{ 
+  SystemInit();
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  SystemClock_Config();
+  HAL_Init();
+  // Init LED
+  MX_GPIO_Init();
+  // Setup I2C
+  MX_I2C1_Init();
+  MX_USART1_UART_Init();
+  MX_RTC_Init();
 
-    //HAL_UART_Receive(&huart1, data, 21, HAL_MAX_DELAY);
-    start(&hrtc, &gTime, &gDate, start_string);
+  uint8_t start_string[23];
+  RTC_DateTypeDef gDate;
+  RTC_TimeTypeDef gTime;
+  strcpy((char *)start_string, "11:11:11 11/11/2021 10");
 
-    // LED_GPIO_CLK_ENABLE();
+  lcd_init();
+  start(&hrtc, &gTime, &gDate, start_string);
 
-    // GPIO_InitTypeDef GPIO_InitStruct;
+  while (1)
+  {
+    updateNumber(&hrtc, &gTime, &gDate, 11);
+    updateNumber(&hrtc, &gTime, &gDate, 12);
+    lcd_set_number_people(10);
 
-    // GPIO_InitStruct.Pin = LED_PIN;
-    // GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    // GPIO_InitStruct.Pull = GPIO_PULLUP;
-    // GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    // HAL_GPIO_Init(LED_GPIO_PORT, &GPIO_InitStruct);
-
-    // flashWrite(0, test_write, 5, DATA_TYPE_8);
-
-    while (1) {
-
-        // HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
-
-        // flashRead(0, test_read, 5, DATA_TYPE_8);
-        // flashWrite(10, &timestamp_func, 1, DATA_TYPE_32);
-        // flashEraseSector(11);
-        // flashRead(10, &read_timestamp_func, 5, DATA_TYPE_32);
-
-        updateNumber(&hrtc, &gTime, &gDate, 11);
-        updateNumber(&hrtc, &gTime, &gDate, 12);
-
-        // snprintf((char *)timestamp, sizeof(timestamp), "%02d:%02d:%02d\n%d", gTime.Hours, gTime.Minutes, gTime.Seconds, timestamp_func);
-        // snprintf((char *)datestamp, sizeof(datestamp), "%02d-%02d-%2d\n", gDate.Date, gDate.Month, 2000 + gDate.Year);
-        // HAL_UART_Transmit(&huart1, datestamp, strlen((char *)datestamp), HAL_MAX_DELAY);
-        // HAL_UART_Transmit(&huart1, timestamp, strlen((char *)timestamp), HAL_MAX_DELAY);
-
-        HAL_Delay(1000);
-    }
+    HAL_Delay(1000);
+  }
 }
 
 void SystemClock_Config(void) {
@@ -139,7 +112,6 @@ void SystemClock_Config(void) {
 }
 
 static void MX_USART1_UART_Init(void) {
-
     huart1.Instance = USART1;
     huart1.Init.BaudRate = 115200;
     huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -151,6 +123,54 @@ static void MX_USART1_UART_Init(void) {
     if (HAL_UART_Init(&huart1) != HAL_OK) {
         Error_Handler();
     }
+}
+
+static void MX_I2C1_Init(void)
+{
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+static void MX_GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct; 
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  GPIO_InitStruct.Pin = RED_LED_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  //pin 6 as pull up
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
+
+  GPIO_InitStruct.Pin = GREEN_LED_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIO_BANK_LED, &GPIO_InitStruct); 
+
+  /*Configure GPIO pin : PA9 */
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = IR_1_PIN|IR_2_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIO_BANK_IR, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(IR_EXT_HANDLE, 0, 0);
+  HAL_NVIC_EnableIRQ(IR_EXT_HANDLE);
 }
 
 static void MX_RTC_Init(void) {
