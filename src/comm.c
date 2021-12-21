@@ -39,6 +39,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
     bool cvrted;
     uint8_t *pbuf;
     uint16_t n;
+    uint32_t tmpNewValue;
 
     GAL_UART_Transmit(buf + buf_cnt + len, 0x1); // echo back
 
@@ -88,8 +89,14 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                 for (cvrted = false, i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] <= '9'); i++) {
 
                     if (!cvrted) {
+
+                        tmpNewValue = atoi((char *)buf + 4);
+                        if (tmpNewValue > 0xffff) {
+                            break;
+                        }
+
                         cvrted = true;
-                        setValue = atol((char *)buf + 4);
+                        setValue = tmpNewValue;
                         INVOKE_CB(phcomm->Callback.newValueSet, setValue);
                     }
 

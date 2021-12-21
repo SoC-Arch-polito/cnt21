@@ -13,13 +13,13 @@ machine LoadPlatformDescription @./peripherals/ext_peripheral.repl
 
 cpu PerformanceInMips 125
 
-:emulation CreateServerSocketTerminal 1234 "externalUART" false
-:connector Connect uart4 externalUART
-:showAnalyzer uart4
-
-emulation CreateUartPtyTerminal "externalUART" "/tmp/uart4" true
+emulation CreateServerSocketTerminal 1234 "externalUART" False
 connector Connect uart4 externalUART
 showAnalyzer uart4
+
+:emulation CreateUartPtyTerminal "externalUART" "/tmp/uart4" true
+:connector Connect uart4 externalUART
+:showAnalyzer uart4
 
 macro reset
 """

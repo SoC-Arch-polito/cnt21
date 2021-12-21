@@ -135,9 +135,9 @@ void lcd_set_text_downloading(){
 	lcd_send_string("                ");
 }
 
-void lcd_set_number_people(int n_people){
-	char num_char[15];
-	sprintf(num_char, "%d", n_people);
+void lcd_set_number_people(int n_people, int max_people){
+	char num_char[16];
+	sprintf(num_char, "%d/%d", n_people, max_people);
 	
 	lcd_go_home();
 	lcd_send_string("Number of people");

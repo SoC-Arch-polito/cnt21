@@ -202,7 +202,7 @@ static void update_interface(){
         turn_off_green_led();
     }
 
-    lcd_set_number_people(number_people);
+    lcd_set_number_people(number_people, number_people_max);
 }
 
 /**
@@ -215,12 +215,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         case IR_1_PIN:
             // Manage counter, increase
             if(setup_phase > 1 && number_people < number_people_max)
-                log_update_number(&hrtc, &gTime, &gDate, number_people++, &hcomm);
+                log_update_number(&hrtc, &gTime, &gDate, ++number_people, &hcomm);
         break;
         case IR_2_PIN:
             // Manage counter, decrease
             if(setup_phase > 1 && number_people > 0)
-                log_update_number(&hrtc, &gTime, &gDate, number_people--, &hcomm);
+                log_update_number(&hrtc, &gTime, &gDate, --number_people, &hcomm);
         break;
     }
 
