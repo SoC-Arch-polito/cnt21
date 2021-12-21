@@ -65,10 +65,9 @@ int main(void) {
 
     update_interface();
 
-    while (1) {
-        HAL_Delay(100);
+    while (1) { 
+        __WFI();
     }
-
 }
 
 void SystemClock_Config(void) {
