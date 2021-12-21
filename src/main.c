@@ -63,8 +63,10 @@ int main(void) {
     COMM_Init(&hcomm);
     COMM_StartListen();
 
+    update_interface();
+
     while (1) {
-        HAL_Delay(1000);
+        HAL_Delay(100);
     }
 
 }
