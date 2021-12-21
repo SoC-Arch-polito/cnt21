@@ -17,12 +17,12 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-[![Contributors][contributors-shield]][contributors-url]
+<!-- [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+[![LinkedIn][linkedin-shield]][linkedin-url] -->
 
 
 
@@ -33,19 +33,19 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-<h3 align="center">project_title</h3>
+<h3 align="center">CNT++</h3>
 
   <p align="center">
-    project_description
+    Firmware module for counting people using STM32F4x microcontroller 
     <br />
     <a href="https://github.com/github_username/repo_name"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/github_username/repo_name">View Demo</a>
+    <!-- <a href="https://github.com/github_username/repo_name">View Demo</a> -->
     ·
-    <a href="https://github.com/github_username/repo_name/issues">Report Bug</a>
+    <a href="https://github.com/SoC-Arch-polito/cnt21/issues/new">Report Bug</a>
     ·
-    <a href="https://github.com/github_username/repo_name/issues">Request Feature</a>
+    <a href="https://github.com/SoC-Arch-polito/cnt21/issues/new">Request Feature</a>
   </p>
 </div>
 
@@ -84,71 +84,53 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email`, `email_client`, `project_title`, `project_description`
+The people counter is able to count the number of people that enter/exit a room using two IR sensors. In addition to that, there are two leds that signal if the room is full (red) or if there are places left (green). Moreover, a display shows the number of free seats. The maximum number of people, the reset feature and the log transfer can be done via UART.
+Our target is to develop firmware modules able to save the status of the system on log files in the flash memory, configure the device and download logs via UART + DMA. In addition to that, the system will also show the state of the room on the LCD display and on the leds and manage the IR sensors + RTC.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-
 ### Built With
 
-* [Next.js](https://nextjs.org/)
-* [React.js](https://reactjs.org/)
-* [Vue.js](https://vuejs.org/)
-* [Angular](https://angular.io/)
-* [Svelte](https://svelte.dev/)
-* [Laravel](https://laravel.com)
-* [Bootstrap](https://getbootstrap.com)
-* [JQuery](https://jquery.com)
+* [Renode](https://renode.io/)
+* [PlatformIo](https://platformio.org/)
+* [Mono](https://www.mono-project.com/)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ### Functional Specification
 
-Here's a Short description of what is the focus of your application.
+The expected results consist of providing a safe system that can be used in critical domains too (for example in applying restrictions in a public place due to Covid 19). The firmware will be as optimized as possible, in order to reduce the power consumption. The data displayed on the LCD will be shown in a user-friendly way so that everyone will understand. 
 
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
 ### Prerequisites
+One important point of CNT++ is that it is very easy to be launched thanks to its adaptation capability to <a href="https://docs.platformio.org/en/latest/integration/ide/vscode.html#ide-vscode">VSCode, Platform IO</a> and Renode.
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
+After installing the developements tools the system can be run following the steps listed below:
+
+* Clone the repository.
   ```sh
-  npm install npm@latest -g
+  git clone https://github.com/SoC-Arch-polito/cnt21.git
   ```
-
-### Installation
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/github_username/repo_name.git
-   ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
-
-<p align="right">(<a href="#top">back to top</a>)</p>
+* Build the project.
+* Open Renode and write `include @./stm32f4_discovery_modified.resc`.
+  ```sh
+  cd cnt21
+  renode
+  ```
+* Launch the firmware writing `start` command in the Renode console.
+* Interact with CNT++ writing the commands both in the Renode console in the CommandConsole (UART4).
 
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
+<!-- _For more examples, please refer to the [Documentation](https://example.com)_ -->
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -231,4 +213,4 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [license-url]: https://github.com/github_username/repo_name/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: images/main.png
