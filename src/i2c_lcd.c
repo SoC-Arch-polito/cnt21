@@ -141,6 +141,7 @@ void lcd_set_text_downloading(){
 }
 
 void lcd_set_number_people(int n_people){
+    lcd_clear();
     char num_char[15];
     sprintf(num_char, "%d", n_people);
 	
