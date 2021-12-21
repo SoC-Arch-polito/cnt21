@@ -135,9 +135,10 @@ void lcd_send_two_string (char *str1, char * str2)
 }
 
 void lcd_set_text_downloading(){
-    lcd_clear();
     lcd_go_home();
-    lcd_send_string("Downloading...");
+    lcd_send_string("Downloading...  ");
+	lcd_put_cur(1,0);
+	lcd_send_string("                ");
 }
 
 void lcd_set_number_people(int n_people){
@@ -151,4 +152,5 @@ void lcd_set_number_people(int n_people){
   	lcd_send_custom_char(1);
 	lcd_send_string(" ");
     lcd_send_string(num_char);
+	lcd_send_string("                ");
 }
