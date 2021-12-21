@@ -32,10 +32,10 @@ void log_rtc_setup(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateType
     // HAL_RTC_GetDate(hrtc, gDate, RTC_FORMAT_BIN);
     // HAL_RTC_GetTime(hrtc, gTime, RTC_FORMAT_BIN);
     sscanf((char *)start, "%d/%d/%d %d/%d/%d", &day, &month, &year, &hour, &min, &sec);
-    gTime->Hours = hour % 12;
+    gTime->Hours = hour > 12 ? hour % 12 : hour;
     gTime->Minutes = min;
     gTime->Seconds = sec;
-    gTime->TimeFormat = hour > 12 ? RTC_HOURFORMAT12_PM : RTC_HOURFORMAT12_AM;
+    gTime->TimeFormat = hour >= 12 ? RTC_HOURFORMAT12_PM : RTC_HOURFORMAT12_AM;
     HAL_RTC_SetTime(hrtc, gTime, RTC_FORMAT_BIN);
     gDate->Date = day;
     gDate->Month = month;
