@@ -8,9 +8,16 @@
 
 #define STR_PROMPT   "\nthor@cnt++ > "
 #define STR_NOTFOUND "\r\nCOMMAND NOT FOUND!\r\n"
+#define STR_HELP     "\r\n\
+    The following commands are available:\r\n\
+           set_time : Set the system date and time.       Usage: set_time dd/mm/yyyy hh/mm/ss\r\n\
+           set      : Set the threshold for people count. Usage: set <N>\r\n\
+           get      : Retrieves the log of the system.    Usage: <use external script to decode>\r\n\
+           help     : Shows this help.                    Usage: help\r\n"
+
 
 static struct COMM_Handle *phcomm;
-static uint8_t buf[0x160];
+static uint8_t buf[0x200];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
 static volatile uint32_t setValue = 0;
@@ -108,15 +115,9 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
             len = -4;
 
         } else if (!strncmp((char *)buf, "help", 0x4)) {
-
-            len = sprintf((char *)buf, "\r\nThe following commands are available:\r\n");
-            len += sprintf((char *)buf + len, "\t%14s:\tSet the system date and time\r\n", "set_time");
-            len += sprintf((char *)buf + len, "\t%14s:\tSet the threshold for people count\r\n", "set");
-            len += sprintf((char *)buf + len, "\t%14s:\tRetrieves the log of the system. Needs external script to decode the output\r\n", "get");
-            len += sprintf((char *)buf + len, "\t%14s:\tShows this help\r\n", "help");
+            strcpy((char *)buf, STR_HELP);
+            len = sizeof(STR_HELP) - 3;
             buf_cnt = 0;
-            // len -= sizeof(STR_PROMPT);
-
         } else if (buf_cnt) {
             strcpy((char *)buf, STR_NOTFOUND);
             len = sizeof(STR_NOTFOUND) - 3;
