@@ -6,8 +6,11 @@
 
 #define INVOKE_CB(cb, args...) {if (cb) (cb(args));}
 
+#define STR_PROMPT   "\nthor@cnt++ > "
+#define STR_NOTFOUND "\r\nCOMMAND NOT FOUND!\r\n"
+
 static struct COMM_Handle *phcomm;
-static uint8_t buf[0x20];
+static uint8_t buf[0x160];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
 static volatile uint32_t setValue = 0;
@@ -69,10 +72,10 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                 if (i == 0x6) {
                     INVOKE_CB(phcomm->Callback.onNewSysDateTime, (const char *)(buf + 0x9));
                     strcpy((char *)buf, "\r\nDONE!\r\n");
-                    len = 7;
+                    len = 6;
                 } else {
                     strcpy((char *)buf, "\r\nINVALID FORMAT!\r\n");
-                    len = 17;
+                    len = 16;
                 }
 
             } else if (buf[0x3] == ' ') {
@@ -90,22 +93,41 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
                 if (cvrted) {
                     buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
-                    strcpy((char *)buf + buf_cnt + 2, "New value");
+                    strcpy((char *)buf + buf_cnt + 2, "NEW VALUE");
                     buf[buf_cnt + 9 + 2] = ' ';
                 }
             }
 
         } else if (!strncmp((char *)buf, "get", 0x3)) {
+
             INVOKE_CB(phcomm->Callback.onUARTDownload, false);
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
 
             send_etx = (phcomm->SrcMemory.size >> 16) + 1;
             GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
-            len = -2;
+            len = -4;
+
+        } else if (!strncmp((char *)buf, "help", 0x4)) {
+
+            len = sprintf((char *)buf, "\r\nThe following commands are available:\r\n");
+            len += sprintf((char *)buf + len, "\t%14s:\tSet the system date and time\r\n", "set_time");
+            len += sprintf((char *)buf + len, "\t%14s:\tSet the threshold for people count\r\n", "set");
+            len += sprintf((char *)buf + len, "\t%14s:\tRetrieves the log of the system. Needs external script to decode the output\r\n", "get");
+            len += sprintf((char *)buf + len, "\t%14s:\tShows this help\r\n", "help");
+            buf_cnt = 0;
+            // len -= sizeof(STR_PROMPT);
+
+        } else if (buf_cnt) {
+            strcpy((char *)buf, STR_NOTFOUND);
+            len = sizeof(STR_NOTFOUND) - 3;
+            buf_cnt = 0;
         }
         
-        buf[buf_cnt + len + 1] = '\n';
-        GAL_UART_Transmit_DMA(buf + buf_cnt, len + 2); 
+        strcpy((char *)(buf + buf_cnt + len + 1), STR_PROMPT);
+        // buf[buf_cnt + len + 1] = '\n';
+        // buf[buf_cnt + len + 2] = '>';
+        // buf[buf_cnt + len + 3] = ' ';
+        GAL_UART_Transmit_DMA(buf + buf_cnt, len + sizeof(STR_PROMPT)); 
         buf_cnt = 0xff;
     } 
 
