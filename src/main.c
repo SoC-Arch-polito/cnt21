@@ -44,6 +44,8 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
 
+static int c = 0;
+
 int main(void) {
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
@@ -76,12 +78,11 @@ int main(void) {
     COMM_Init(&hcomm);
     COMM_StartListen();
 
-    int i = 0;
     while (1) {
-        lcd_set_number_people(i++);
+        lcd_set_number_people(c);
         // updateNumber(&hrtc, &gTime, &gDate, 11);
         // updateNumber(&hrtc, &gTime, &gDate, 12);
-        HAL_Delay(1000);
+        HAL_Delay(500);
     }
 }
 
@@ -198,11 +199,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     switch (GPIO_Pin) {
         case IR_1_PIN:
             // TODO: manage counter, increase
-            turn_on_red_led();
+            //turn_on_red_led();
+            c++;
             break;
         case IR_2_PIN:
             // TODO: manage counter, decrease
-            turn_off_red_led();
+            // turn_off_red_led();
+            c--;
             break;
     }
 }
