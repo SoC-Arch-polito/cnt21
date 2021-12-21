@@ -28,8 +28,12 @@ namespace Antmicro.Renode.Peripherals
         {
             active = true;
             this.Log(LogLevel.Debug, "Display i2c connected");
-            thread1 = new Thread(StartForm);
+
+            thread1 = new Thread(StartForm) {IsBackground = true};
             thread1.Start();
+
+            thread2 = new Thread(UpdateFrom) {IsBackground = true};
+            thread2.Start();
             Reset();
         }
 
@@ -66,10 +70,10 @@ namespace Antmicro.Renode.Peripherals
         */
         public void UpdateFrom(){
             while(true){
-                if(display.needsToBeUpdate()){
+                if(display != null && display.needsToBeUpdate()){
                     display.Invalidate();
-                    Thread.Sleep(30);
                 }
+                Thread.Sleep(30);
             }
         }
 
@@ -79,8 +83,6 @@ namespace Antmicro.Renode.Peripherals
         public void StartForm(){
             display = new DisplayForm(this);
             display.Text = "Display 2x" + DisplayForm.numberOfCharPerRow;
-            thread2 = new Thread(UpdateFrom);
-            thread2.Start();
             display.ShowDialog();
         }
 
