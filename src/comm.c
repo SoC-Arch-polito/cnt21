@@ -6,21 +6,27 @@
 
 #define INVOKE_CB(cb, args...) {if (cb) (cb(args));}
 
+#define STR_PROMPT   "\nthor@cnt++ > "
+#define STR_NOTFOUND "\r\nCOMMAND NOT FOUND!\r\n"
+#define STR_HELP     "\r\n\
+    The following commands are available:\r\n\
+           set_time : Set the system date and time.       Usage: set_time dd/mm/yyyy hh/mm/ss\r\n\
+           set      : Set the threshold for people count. Usage: set <N>\r\n\
+           get      : Retrieves the log of the system.    Usage: <use external script to decode>\r\n\
+           help     : Shows this help.                    Usage: help\r\n"
+
+
 static struct COMM_Handle *phcomm;
-static uint8_t buf[0x20];
+static uint8_t buf[0x200];
 static uint8_t send_etx = 0;
 static uint8_t buf_cnt = 0;
 static volatile uint32_t setValue = 0;
-static uint32_t rem;
 
 static void txCpltCback(UART_HandleTypeDef *huart) {
-    static uint8_t ts;
 
     if (send_etx > 1) {
         send_etx--;
-        rem = phcomm->SrcMemory.size - 0x400;
-        ts = rem <= 0x400 ? 1 : (rem / 0x400 + 1);
-        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, ts == 1 ? rem : 0x400);
+        GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
     } else if (send_etx == 1) {
         INVOKE_CB(phcomm->Callback.onUARTDownload, true);
         buf[0] = '\n';
@@ -58,7 +64,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
                         *pbuf = '\0';
                         n = atoi((char *)(pbuf - j));
-                        *pbuf = '/';
+                        *pbuf = (j == 2 ? '/' : ' ');
 
                         if (i == 0 && (n <= 0 || n > 31)) break;
                         else if (i == 1 && (n <= 0 || n > 12)) break;
@@ -73,10 +79,10 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                 if (i == 0x6) {
                     INVOKE_CB(phcomm->Callback.onNewSysDateTime, (const char *)(buf + 0x9));
                     strcpy((char *)buf, "\r\nDONE!\r\n");
-                    len = 7;
+                    len = 6;
                 } else {
                     strcpy((char *)buf, "\r\nINVALID FORMAT!\r\n");
-                    len = 17;
+                    len = 16;
                 }
 
             } else if (buf[0x3] == ' ') {
@@ -94,24 +100,35 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
                 if (cvrted) {
                     buf[buf_cnt + (len = (2 + 6 + i + 0))] = '\r';
-                    strcpy((char *)buf + buf_cnt + 2, "New value");
+                    strcpy((char *)buf + buf_cnt + 2, "NEW VALUE");
                     buf[buf_cnt + 9 + 2] = ' ';
                 }
             }
 
         } else if (!strncmp((char *)buf, "get", 0x3)) {
+
             INVOKE_CB(phcomm->Callback.onUARTDownload, false);
             GAL_UART_Transmit(buf + buf_cnt + 1, 1); 
 
-            send_etx = phcomm->SrcMemory.size <= 0x400 ? 1 : (phcomm->SrcMemory.size / 0x400 + 1);
-            rem = phcomm->SrcMemory.size - 0x400;
-            // send_etx = phcomm->SrcMemory.size / 0x400;
-            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0x400);
-            len = -2;
+            send_etx = (phcomm->SrcMemory.size >> 16) + 1;
+            GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
+            len = -4;
+
+        } else if (!strncmp((char *)buf, "help", 0x4)) {
+            strcpy((char *)buf, STR_HELP);
+            len = sizeof(STR_HELP) - 3;
+            buf_cnt = 0;
+        } else if (buf_cnt) {
+            strcpy((char *)buf, STR_NOTFOUND);
+            len = sizeof(STR_NOTFOUND) - 3;
+            buf_cnt = 0;
         }
         
-        buf[buf_cnt + len + 1] = '\n';
-        GAL_UART_Transmit_DMA(buf + buf_cnt, len + 2); 
+        strcpy((char *)(buf + buf_cnt + len + 1), STR_PROMPT);
+        // buf[buf_cnt + len + 1] = '\n';
+        // buf[buf_cnt + len + 2] = '>';
+        // buf[buf_cnt + len + 3] = ' ';
+        GAL_UART_Transmit_DMA(buf + buf_cnt, len + sizeof(STR_PROMPT)); 
         buf_cnt = 0xff;
     } 
 

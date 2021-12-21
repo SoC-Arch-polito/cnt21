@@ -8,45 +8,35 @@
 #include "stdio.h"
 #include "string.h"
 #include "time.h"
-
-#define F4 1
-
-#if F0
-#include "stm32f0xx_hal.h"
-#elif F1
-#include "stm32f1xx_hal.h"
-#elif F2
-#include "stm32f2xx_hal.h"
-#elif F3
-#include "stm32f3xx_hal.h"
-#elif F4
+#include <stdbool.h>
 #include "stm32f4xx_hal.h"
-#elif F7
-#include "stm32f7xx_hal.h"
-#elif L0
-#include "stm32l0xx_hal.h"
-#elif L1
-#include "stm32l1xx_hal.h"
-#elif L4
-#include "stm32l4xx_hal.h"
-#else
-#error "Unsupported STM32 Family"
-#endif
+
 
 // Static reference for I2C
-I2C_HandleTypeDef hi2c1;
-UART_HandleTypeDef huart1;
-RTC_HandleTypeDef hrtc;
+static I2C_HandleTypeDef hi2c1;
+static RTC_HandleTypeDef hrtc;
 
 void SystemClock_Config(void);
 static void MX_I2C1_Init(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
+static void update_interface();
+static void disable_IRQ();
+static void enable_IRQ();
+ONNEW_SYSDTTIME_CB(onNewSysDateTime, newTime);
+ONNEW_VALUE_SET_CB(onNewValueSet, newMax);
+ONUART_DOWNLOAD_CB(onUartDownload, xferDone);
 
-static int c = 0;
+
+static int number_people;
+static int number_people_max;
+static uint8_t setup_phase;
+static RTC_DateTypeDef gDate;
+static RTC_TimeTypeDef gTime;
+static struct COMM_Handle hcomm;
 
 int main(void) {
+
     SystemInit();
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
     SystemClock_Config();
@@ -55,35 +45,30 @@ int main(void) {
     MX_GPIO_Init();
     // Setup I2C
     MX_I2C1_Init();
-    MX_USART1_UART_Init();
     MX_RTC_Init();
 
-    struct COMM_Handle hcomm;
-
-    uint8_t start_string[23];
-    RTC_DateTypeDef gDate;
-    RTC_TimeTypeDef gTime;
-    strcpy((char *)start_string, "11:11:11 11/11/2021 10");
-
-    lcd_init();
-    start(&hrtc, &gTime, &gDate, start_string);
+    // Initilization of the counters
+    number_people = 0;
+    number_people_max = 0;
+    setup_phase = 0;
+    lcd_init(&hi2c1);
 
     // Init COMM
-    hcomm.SrcMemory.basePtr = (uint8_t *)0x08000000;
-    hcomm.SrcMemory.size = 0x10000;
-    hcomm.Callback.newValueSet = NULL;
-    hcomm.Callback.onNewSysDateTime = NULL;
-    hcomm.Callback.onUARTDownload = NULL;
+    hcomm.SrcMemory.basePtr = (uint8_t *)0x080E0000;
+    hcomm.SrcMemory.size = 0x0;
+    hcomm.Callback.newValueSet = onNewValueSet;
+    hcomm.Callback.onNewSysDateTime = onNewSysDateTime;
+    hcomm.Callback.onUARTDownload = onUartDownload;
 
     COMM_Init(&hcomm);
     COMM_StartListen();
 
+    update_interface();
+
     while (1) {
-        lcd_set_number_people(c);
-        // updateNumber(&hrtc, &gTime, &gDate, 11);
-        // updateNumber(&hrtc, &gTime, &gDate, 12);
-        HAL_Delay(500);
+        HAL_Delay(100);
     }
+
 }
 
 void SystemClock_Config(void) {
@@ -125,17 +110,27 @@ void SystemClock_Config(void) {
     HAL_RCC_EnableCSS();
 }
 
-static void MX_USART1_UART_Init(void) {
-    huart1.Instance = USART1;
-    huart1.Init.BaudRate = 115200;
-    huart1.Init.WordLength = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits = UART_STOPBITS_1;
-    huart1.Init.Parity = UART_PARITY_NONE;
-    huart1.Init.Mode = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart1) != HAL_OK) {
-        Error_Handler();
+ONNEW_SYSDTTIME_CB(onNewSysDateTime, newTime) {
+    log_rtc_setup(&hrtc, &gTime, &gDate, newTime);
+	setup_phase++;
+}
+
+ONNEW_VALUE_SET_CB(onNewValueSet, newMax) {
+	number_people_max = newMax;
+	setup_phase++;
+	update_interface();
+}
+
+ONUART_DOWNLOAD_CB(onUartDownload, xferDone) {
+
+	if (!hcomm.SrcMemory.size) return;
+
+	if (xferDone) {
+        update_interface();
+        enable_IRQ();
+    } else {
+        disable_IRQ();
+        lcd_set_text_downloading();
     }
 }
 
@@ -180,7 +175,15 @@ static void MX_GPIO_Init(void) {
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIO_BANK_IR, &GPIO_InitStruct);
 
-    /* EXTI interrupt init*/
+    enable_IRQ();
+}
+
+static void disable_IRQ(){
+    HAL_NVIC_SetPriority(IR_EXT_HANDLE, 0, 0);
+    HAL_NVIC_DisableIRQ(IR_EXT_HANDLE);
+}
+
+static void enable_IRQ(){
     HAL_NVIC_SetPriority(IR_EXT_HANDLE, 0, 0);
     HAL_NVIC_EnableIRQ(IR_EXT_HANDLE);
 }
@@ -188,6 +191,18 @@ static void MX_GPIO_Init(void) {
 void EXTI9_5_IRQHandler(void) {
     HAL_GPIO_EXTI_IRQHandler(IR_1_PIN);  // Reset the PIN8 Interrupt
     HAL_GPIO_EXTI_IRQHandler(IR_2_PIN);  // Reset the PIN9 Interrupt
+}
+
+static void update_interface(){
+    if (number_people < number_people_max) {
+        turn_off_red_led();
+        turn_on_green_led();
+    } else {
+        turn_on_red_led();
+        turn_off_green_led();
+    }
+
+    lcd_set_number_people(number_people);
 }
 
 /**
@@ -198,19 +213,22 @@ void EXTI9_5_IRQHandler(void) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     switch (GPIO_Pin) {
         case IR_1_PIN:
-            // TODO: manage counter, increase
-            //turn_on_red_led();
-            c++;
-            break;
+            // Manage counter, increase
+            if(setup_phase > 1 && number_people < number_people_max)
+                log_update_number(&hrtc, &gTime, &gDate, number_people++, &hcomm);
+        break;
         case IR_2_PIN:
-            // TODO: manage counter, decrease
-            // turn_off_red_led();
-            c--;
-            break;
+            // Manage counter, decrease
+            if(setup_phase > 1 && number_people > 0)
+                log_update_number(&hrtc, &gTime, &gDate, number_people--, &hcomm);
+        break;
     }
+
+    update_interface();
 }
 
 static void MX_RTC_Init(void) {
+
     /* USER CODE BEGIN RTC_Init 0 */
 
     /* USER CODE END RTC_Init 0 */
@@ -225,7 +243,7 @@ static void MX_RTC_Init(void) {
     /** Initialize RTC Only
      */
     hrtc.Instance = RTC;
-    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+    hrtc.Init.HourFormat = RTC_HOURFORMAT_12;
     hrtc.Init.AsynchPrediv = 127;
     hrtc.Init.SynchPrediv = 255;
     hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
