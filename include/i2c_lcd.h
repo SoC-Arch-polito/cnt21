@@ -22,4 +22,4 @@ void lcd_send_two_string (char *str1, char * str2);
 
 void lcd_set_text_downloading();
 
-void lcd_set_number_people(int n_people);
+void lcd_set_number_people(int n_people, int max_people);

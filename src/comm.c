@@ -28,10 +28,8 @@ static void txCpltCback(UART_HandleTypeDef *huart) {
         send_etx--;
         GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
     } else if (send_etx == 1) {
-        INVOKE_CB(phcomm->Callback.onUARTDownload, true);
-        buf[0] = '\n';
         send_etx--;
-        GAL_UART_Transmit_DMA(&buf[0], 0x1);
+        INVOKE_CB(phcomm->Callback.onUARTDownload, true);
     }
 
 }
@@ -41,6 +39,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
     bool cvrted;
     uint8_t *pbuf;
     uint16_t n;
+    uint32_t tmpNewValue;
 
     GAL_UART_Transmit(buf + buf_cnt + len, 0x1); // echo back
 
@@ -90,8 +89,14 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
                 for (cvrted = false, i = 4; i < buf_cnt && (buf[i] >= '0' && buf[i] <= '9'); i++) {
 
                     if (!cvrted) {
+
+                        tmpNewValue = atoi((char *)buf + 4);
+                        if (tmpNewValue > 0xffff) {
+                            break;
+                        }
+
                         cvrted = true;
-                        setValue = atol((char *)buf + 4);
+                        setValue = tmpNewValue;
                         INVOKE_CB(phcomm->Callback.newValueSet, setValue);
                     }
 
@@ -112,7 +117,7 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
 
             send_etx = (phcomm->SrcMemory.size >> 16) + 1;
             GAL_UART_Transmit_DMA(phcomm->SrcMemory.basePtr, send_etx == 1 ? phcomm->SrcMemory.size : 0xffff);
-            len = -4;
+            len = -1;
 
         } else if (!strncmp((char *)buf, "help", 0x4)) {
             strcpy((char *)buf, STR_HELP);
@@ -125,9 +130,6 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
         }
         
         strcpy((char *)(buf + buf_cnt + len + 1), STR_PROMPT);
-        // buf[buf_cnt + len + 1] = '\n';
-        // buf[buf_cnt + len + 2] = '>';
-        // buf[buf_cnt + len + 3] = ' ';
         GAL_UART_Transmit_DMA(buf + buf_cnt, len + sizeof(STR_PROMPT)); 
         buf_cnt = 0xff;
     } 
