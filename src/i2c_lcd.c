@@ -3,29 +3,6 @@
 #include "stm32f4xx_hal.h"
 #include "stdio.h"
 
-/*LCD Commands*/
-#define LCD_FUNCTION_SET1      0x31
-#define LCD_FUNCTION_SET2      0x22
-#define LCD_4BIT_2LINE_MODE    0x28
-#define LCD_DISP_CURS_ON       0x0E
-#define LCD_DISP_ON_CURS_OFF   0x0C  //Display on, cursor off
-#define LCD_DISPLAY_OFF        0x08
-#define LCD_DISPLAY_ON         0x04
-#define LCD_CLEAR_DISPLAY      0x01
-#define LCD_ENTRY_MODE_SET     0x04
-#define LCD_INCREMENT_CURSER   0x06
-#define LCD_SET_ROW1_COL1      0x80  //Force cursor to beginning ( 1st line)
-#define LCD_SET_ROW2_COL1      0xC0  //Force cursor to beginning ( 2nd line)
-#define LCD_MOVE_DISPLAY_LEFT  0x18 
-#define LCD_MOVE_DISPLAY_RIGHT 0x1C 
-#define LCD_CREATE_CHAR		   0x40 
-
-#define SLAVE_ADDRESS_LCD 0x34<<1 // change this according to ur setup
-#define LCD_BACKLIGHT 0x08
-#define LCD_NOBACKLIGHT 0x00
-#define EN 0x04
-#define RS 0x01
-
 static I2C_HandleTypeDef *hi2c1;
 
 // https://maxpromer.github.io/LCD-Character-Creator/
