@@ -160,7 +160,7 @@ sysbus.gpioPortD.IRSensorEnter TriggerSensorNTimes 10 1000
 ```
 
 ### I2C DISPLAY
-The I2C display module is a wrapper over the HAL methods that are already provided. For this project, the simulated display 16x2 (LCD Module 1602A) has been connected to the first peripheral with the 0x34 address, since it has been considered with mounted a PCF8574 I$^2$C interface in order to reduce the number of used pins. 
+The I2C display module is a wrapper over the HAL methods that are already provided. For this project, the simulated display 16x2 (LCD Module 1602A) has been connected to the first peripheral with the 0x34 address, since it has been considered with mounted a PCF8574 I2C interface in order to reduce the number of used pins. 
 By referring to the [https://www.openhacks.com/uploadsproductos/eone-1602a1.pdf](LCD Module 1602A datasheet), all the commands are managed in 10 bits, in which the MSBs define the command and the LSBs the configuration.
 In order to abstract from the complexity of the command management, the hexadecimal representation of each one of the has been put in the `i2c_lcd.h` header file.
 The setup procedure of the display is based on sending a precise sequence of bits with the correct timing, in order to switch from the 8 to 4 bits mode. The steps are the following:
@@ -175,10 +175,10 @@ The setup procedure of the display is based on sending a precise sequence of bit
 It's important to specify that all the previous commands are send in a specific manner, so that the controller on the LCD can understand if them. Commands are sent as 4 bytes, where the first and the second byte of the initial command are split and duplicated in 4 bytes and then an or logic operation is performed to set the backlight and if the display is enabled.
 
 Starting from a defined location on the 16x2 matrix, characters can be sent one by one by sending their byte representation.
-In order to make the simulated environment complete, a simulated LCD has been developed in C\# with the Mono framework that is an open source implementation of Microsoft's .NET Framework. In this way, Form can be directly created from the C# of the custom peripheral. An image is loaded as background and each of the 16x2 characters are manged as a 5x8 dot matrix.
+In order to make the simulated environment complete, a simulated LCD has been developed in C# with the Mono framework that is an open source implementation of Microsoft's .NET Framework. In this way, Form can be directly created from the C# of the custom peripheral. An image is loaded as background and each of the 16x2 characters are manged as a 5x8 dot matrix.
 In the .cs definition of the peripheral there is a map that converts all ASCII characters from into the 5x8 matrix representation.
 
-In this case, the LCD I$^2$C protocol has been implemented 1:1, accordingly to the specification.
+In this case, the LCD I2C protocol has been implemented 1:1, accordingly to the specification.
 Not only the normal chars has been implemented but, since a normal LCD display has an internal memory that allows to store up to 5x8 custom char definition, the simulator and the firmware has been enhanced with this additional feature.
 
 
@@ -198,7 +198,7 @@ main module, finally, puts together them and creates the real interaction betwee
 
 ![image](https://user-images.githubusercontent.com/9128612/147503209-bae8e391-c02f-44ee-81cd-5098d5b92036.png)
 
-- `newValueSet`: launched when the operator set a new value, only if it's a valid value ($\leq 65535$). The new value is passed as function argument to the callback.
+- `newValueSet`: launched when the operator set a new value, only if it's a valid value (<= 65535). The new value is passed as function argument to the callback.
 - `onUARTDownload`: it's executed both when a download operation begins and ends (it can be distinguished thanks to the function's boolean argument). In the final implementation, it's used to set the LCD screen with the sentence "Downloading..".
 - `texttt{onNewSysDateTime`: launched when the operator set a new date and time for the system, only if it has a valid format dd/mm/yyyy hh/mm/ss. In the final implementation, it's used to set up the RTC peripheral's time.
 
@@ -254,7 +254,7 @@ So we can save in the flash memory 21845 entrace/exit.
 The last important thig to mention si the fact that when the flash is full, the writing restarts from the beginning of it. So it works like a First in First out.
 
 ## Open issues
-See the [open issues](https://github.com/gSoC-Arch-polito/cnt21/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/SoC-Arch-polito/cnt21/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
