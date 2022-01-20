@@ -110,7 +110,7 @@ void SystemClock_Config(void) {
 }
 
 ONNEW_SYSDTTIME_CB(onNewSysDateTime, newTime) {
-    log_rtc_setup(&hrtc, &gTime, &gDate, newTime);
+    log_rtc_setup(&hrtc, &gTime, &gDate, newTime, &hcomm);
 	setup_phase++;
 }
 

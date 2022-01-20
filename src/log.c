@@ -25,9 +25,11 @@ int log_unix_timestamp(RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate) {
     return t_of_day;
 }
 
-void log_rtc_setup(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, const char *start) {
+void log_rtc_setup(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *gTime, RTC_DateTypeDef *gDate, const char *start, struct COMM_Handle *hcomm) {
     int hour, min, sec, day, month, year;
     flashSetSectorAddrs(11, 0x080E0000);
+    hcomm->SrcMemory.basePtr = (uint8_t *)0x080E0000 + i;
+
     // https://community.st.com/s/question/0D53W000004KJtn/cannot-set-time-with-halrtcsettime-on-l412kb-nucleo32-after-init
     // HAL_RTC_GetDate(hrtc, gDate, RTC_FORMAT_BIN);
     // HAL_RTC_GetTime(hrtc, gTime, RTC_FORMAT_BIN);
