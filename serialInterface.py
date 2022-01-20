@@ -25,6 +25,8 @@ if __name__ == "__main__":
     while True:
         try:
             entry = s.recv(6)
+            if b"\nthor@" == entry:
+                break
         except:
             exit(0)
 
