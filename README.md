@@ -29,14 +29,14 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/SoC-Arch-polito/cnt21">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">CNT++</h3>
 
   <p align="center">
-    Firmware module for counting people using STM32F4x microcontroller 
+    Firmware module for counting people using STM32F4x microcontroller
     <br />
     <a href="https://github.com/SoC-Arch-polito/cnt21"><strong>Explore the docs »</strong></a>
     <br />
@@ -47,6 +47,12 @@
     ·
     <a href="https://github.com/SoC-Arch-polito/cnt21/issues/new">Request Feature</a>
   </p>
+  <br><br>
+
+  Video Demo
+  <a href="https://youtu.be/bZBAxl6mDF0">
+    <img src="images/youtube.jpeg" alt="Logo" width="450" height="245">
+  </a>
 </div>
 
 
@@ -101,7 +107,7 @@ Our target is to develop firmware modules able to save the status of the system 
 
 ### Functional Specification
 
-The expected results consist of providing a safe system that can be used in critical domains too (for example in applying restrictions in a public place due to Covid 19). The firmware will be as optimized as possible, in order to reduce the power consumption. The data displayed on the LCD will be shown in a user-friendly way so that everyone will understand. 
+The expected results consist of providing a safe system that can be used in critical domains too (for example in applying restrictions in a public place due to Covid 19). The firmware will be as optimized as possible, in order to reduce the power consumption. The data displayed on the LCD will be shown in a user-friendly way so that everyone will understand.
 
 
 <!-- GETTING STARTED -->
@@ -130,7 +136,7 @@ After installing the developements tools the system can be run following the ste
 ## Roadmap
 
 The overall firmware is divided into different modules, each one aiming to implement different functionalities.
- 
+
 
 - [] GPIO (LEDs and IR sensors)
 - [] I2C DISPLAY
@@ -161,7 +167,7 @@ sysbus.gpioPortD.IRSensorEnter TriggerSensorNTimes 10 1000
 ```
 
 ### I2C DISPLAY
-The I2C display module is a wrapper over the HAL methods that are already provided. For this project, the simulated display 16x2 (LCD Module 1602A) has been connected to the first peripheral with the 0x34 address, since it has been considered with mounted a PCF8574 I2C interface in order to reduce the number of used pins. 
+The I2C display module is a wrapper over the HAL methods that are already provided. For this project, the simulated display 16x2 (LCD Module 1602A) has been connected to the first peripheral with the 0x34 address, since it has been considered with mounted a PCF8574 I2C interface in order to reduce the number of used pins.
 By referring to the [https://www.openhacks.com/uploadsproductos/eone-1602a1.pdf](LCD Module 1602A datasheet), all the commands are managed in 10 bits, in which the MSBs define the command and the LSBs the configuration.
 In order to abstract from the complexity of the command management, the hexadecimal representation of each one of the has been put in the `i2c_lcd.h` header file.
 The setup procedure of the display is based on sending a precise sequence of bits with the correct timing, in order to switch from the 8 to 4 bits mode. The steps are the following:
@@ -188,7 +194,7 @@ This module is in charge of managing communications between the system and the e
 
 The main module, called COMM is composed of two sub modules, called UART and DMA.
 
-#### UART 
+#### UART
 The UART sub module is in charge of configuring one of the UART peripherals offered by the STM32F4 platform, in particular it uses `uart4`, that spaces between the two memory addresses 0x40004C00 and 0x40004CFF. The peripheral is configured in such way that an operator can connect to the system setting up as baud rate 115200, 8 bit word, 1 stop bit and no parity bit. Moreover, when data are sent from the external to the system via UART, an interrupt routine is fired that will launch a callback that is set when the sub module is initiated. Interrupt is set even when a transmission is completed, that will launch as usual an external callback.
 
 #### DMA sub module
@@ -211,7 +217,7 @@ Unfortunately, Renode lacks of a lot of peripherals and one of these is the Inte
 
 
 ### RTC
-The Real Time CLock (RTC) is a very important part of the project, because is used to log all the entrance and exit of the people. The used source of the clock, as can be seen in the `SystemClock_Config()`, is the `RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE`. 
+The Real Time CLock (RTC) is a very important part of the project, because is used to log all the entrance and exit of the people. The used source of the clock, as can be seen in the `SystemClock_Config()`, is the `RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE`.
 Starting from this, the RTC has been initialized thanks to the function `MX_RTC_Init()`, in which we declare the main parameters of the RTC, such as:
 - Time format
 - Time structure
@@ -221,35 +227,35 @@ These values are the default ones, because the user will then set the actual tim
 
 As explain in the FLASH paragraph, the date was converted into a standard format, that is the Unix timestamp.  The choice was done to have a default format but also in order to save space in the memory.
 
-In addition to that, due to some Renode issue for the RTC peripherals, the RTC time format was internally set to `RTC_HOURFORMAT_12`. However, in order to simplify the usability, for the user everything is hidden and the time format used to insert date and time is in 24 hours format. 
+In addition to that, due to some Renode issue for the RTC peripherals, the RTC time format was internally set to `RTC_HOURFORMAT_12`. However, in order to simplify the usability, for the user everything is hidden and the time format used to insert date and time is in 24 hours format.
 
 
 When an interrupt is triggered by the sensor that retrieve the entrance/exit of a persona, the function `log_update_number()` is called. This method is used to retrieve current date and time, thanks to the HAL provide by the library`HAL_RTC_GetTime` and `HAL_RTC_GetDate` and then the result is converted into unix timestamp format. After all of that the result is written in the FLASH memory.
 
 ### FLASH
-In this paragraph are discussed the decision made for the FLASH memory with the relative implementation. 
-The memory of our microcontroller is divided into 12 sector, for a total of 1MBytes. The decision was to write on the Sector 11, that is safe and big (128Kbytes). 
+In this paragraph are discussed the decision made for the FLASH memory with the relative implementation.
+The memory of our microcontroller is divided into 12 sector, for a total of 1MBytes. The decision was to write on the Sector 11, that is safe and big (128Kbytes).
 The addresses of different sectors are:
 - Sector 0  0x0800 0000 - 0x0800 3FFF  16 Kbytes
-- Sector 1  0x0800 4000 - 0x0800 7FFF  16 Kbytes 
-- Sector 2   0x0800 8000 - 0x0800 BFFF  16 Kbytes 
-- Sector 3  0x0800 C000 - 0x0800 FFFF  16 Kbytes 
+- Sector 1  0x0800 4000 - 0x0800 7FFF  16 Kbytes
+- Sector 2   0x0800 8000 - 0x0800 BFFF  16 Kbytes
+- Sector 3  0x0800 C000 - 0x0800 FFFF  16 Kbytes
 - Sector 4   0x0801 0000 - 0x0801 FFFF  64 Kbytes  
-- Sector 5  0x0802 0000 - 0x0803 FFFF  128 Kbytes 
-- Sector 6   0x0804 0000 - 0x0805 FFFF  128 Kbytes 
-- Sector 7   0x0806 0000 - 0x0807 FFFF  128 Kbytes 
-- Sector 8   0x0808 0000 - 0x0809 FFFF  128 Kbytes 
-- Sector 9   0x080A 0000 - 0x080B FFFF  128 Kbytes 
-- Sector 10   0x080C 0000 - 0x080D FFFF  128 Kbytes 
+- Sector 5  0x0802 0000 - 0x0803 FFFF  128 Kbytes
+- Sector 6   0x0804 0000 - 0x0805 FFFF  128 Kbytes
+- Sector 7   0x0806 0000 - 0x0807 FFFF  128 Kbytes
+- Sector 8   0x0808 0000 - 0x0809 FFFF  128 Kbytes
+- Sector 9   0x080A 0000 - 0x080B FFFF  128 Kbytes
+- Sector 10   0x080C 0000 - 0x080D FFFF  128 Kbytes
 - Sector 11   0x080E 0000 - 0x080F FFFF  128 Kbytes   
 
 Another important the group had to take was how many bytes in the memory were necessary for each timestamp. It was crucial to find a good tradeoff between readability and compactness.
-The choice was the following: 
+The choice was the following:
 - 32 bits for the time and date (unix timestamp)
 - 16 bits for the counter
 
 Thanks to this convention, the memory occupation was 48 bits (6 bytes) for each entrance/exit. For this we can say that 128Kbytes = 131972 bytes.
-Then, knowing we occupy 6 bytes, we can conclude that 131072/6 = 21845,333 = 21845 
+Then, knowing we occupy 6 bytes, we can conclude that 131072/6 = 21845,333 = 21845
 
 So we can save in the flash memory 21845 entrace/exit.
 The last important thig to mention si the fact that when the flash is full, the writing restarts from the beginning of it. So it works like a First in First out.
