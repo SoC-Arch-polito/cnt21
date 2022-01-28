@@ -38,7 +38,7 @@
   <p align="center">
     Firmware module for counting people using STM32F4x microcontroller 
     <br />
-    <a href="https://github.com/github_username/repo_name"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/SoC-Arch-polito/cnt21"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <!-- <a href="https://github.com/github_username/repo_name">View Demo</a> -->
