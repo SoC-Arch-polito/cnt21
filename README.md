@@ -49,7 +49,7 @@
   </p>
   <br><br>
 
-  Video Demo
+  <b>Video Demo</b><br>
   <a href="https://youtu.be/bZBAxl6mDF0">
     <img src="images/youtube.jpeg" alt="Logo" width="450" height="245">
   </a>
