@@ -121,6 +121,7 @@ After installing the developements tools the system can be run following the ste
   ```sh
   cd cnt21
   renode
+  include @./stm32f4_discovery_modified.resc
   ```
 * Launch the firmware writing `start` command in the Renode console.
 * Interact with CNT++ writing the commands both in the Renode console in the CommandConsole (UART4).
