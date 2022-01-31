@@ -168,7 +168,7 @@ sysbus.gpioPortD.IRSensorEnter TriggerSensorNTimes 10 1000
 
 ### I2C DISPLAY
 The I2C display module is a wrapper over the HAL methods that are already provided. For this project, the simulated display 16x2 (LCD Module 1602A) has been connected to the first peripheral with the 0x34 address, since it has been considered with mounted a PCF8574 I2C interface in order to reduce the number of used pins.
-By referring to the [https://www.openhacks.com/uploadsproductos/eone-1602a1.pdf](LCD Module 1602A datasheet), all the commands are managed in 10 bits, in which the MSBs define the command and the LSBs the configuration.
+By referring to the [LCD Module 1602A datasheet](https://www.openhacks.com/uploadsproductos/eone-1602a1.pdf), all the commands are managed in 10 bits, in which the MSBs define the command and the LSBs the configuration.
 In order to abstract from the complexity of the command management, the hexadecimal representation of each one of the has been put in the `i2c_lcd.h` header file.
 The setup procedure of the display is based on sending a precise sequence of bits with the correct timing, in order to switch from the 8 to 4 bits mode. The steps are the following:
 - Wait 40ms, send 0x31
