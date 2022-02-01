@@ -6,8 +6,7 @@
  * 
  */
 void turn_on_red_led(){
-    HAL_GPIO_WritePin(GPIO_BANK_LED, RED_LED_PIN, GPIO_PIN_SET);
-
+    GPIO_BANK_LED->ODR |= RED_LED_PIN;
 }
 
 /**
@@ -15,7 +14,7 @@ void turn_on_red_led(){
  * 
  */
 void turn_off_red_led(){
-    HAL_GPIO_WritePin(GPIO_BANK_LED, RED_LED_PIN, GPIO_PIN_RESET);
+    GPIO_BANK_LED->ODR &= ~RED_LED_PIN;
 }
 
 /**
@@ -23,7 +22,7 @@ void turn_off_red_led(){
  * 
  */
 void turn_on_green_led(){
-    HAL_GPIO_WritePin(GPIO_BANK_LED, GREEN_LED_PIN, GPIO_PIN_SET);
+    GPIO_BANK_LED->ODR |= GREEN_LED_PIN;
 }
 
 /**
@@ -31,5 +30,5 @@ void turn_on_green_led(){
  * 
  */
 void turn_off_green_led(){
-    HAL_GPIO_WritePin(GPIO_BANK_LED, GREEN_LED_PIN, GPIO_PIN_RESET);
+    GPIO_BANK_LED->ODR &= ~GREEN_LED_PIN;
 }
