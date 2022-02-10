@@ -26,6 +26,7 @@ static void enable_IRQ();
 ONNEW_SYSDTTIME_CB(onNewSysDateTime, newTime);
 ONNEW_VALUE_SET_CB(onNewValueSet, newMax);
 ONUART_DOWNLOAD_CB(onUartDownload, xferDone);
+ONNEW_RESET_CB(onReset, flash);
 
 
 static int number_people;
@@ -59,6 +60,7 @@ int main(void) {
     hcomm.Callback.newValueSet = onNewValueSet;
     hcomm.Callback.onNewSysDateTime = onNewSysDateTime;
     hcomm.Callback.onUARTDownload = onUartDownload;
+    hcomm.Callback.onReset = onReset;
 
     COMM_Init(&hcomm);
     COMM_StartListen();
@@ -131,6 +133,19 @@ ONUART_DOWNLOAD_CB(onUartDownload, xferDone) {
         disable_IRQ();
         lcd_set_text_downloading();
     }
+}
+
+ONNEW_RESET_CB(onReset, flash) {
+    // Reset flash memory
+    if(flash){
+        flashEraseSector(11);
+        hcomm.SrcMemory.size = 0x0;
+    }
+
+    // Reset counter and update interterface
+    number_people = 0;
+    number_people_max = 0;
+    update_interface();
 }
 
 static void MX_I2C1_Init(void) {
@@ -214,7 +229,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     switch (GPIO_Pin) {
         case IR_1_PIN:
             // Manage counter, increase
-            if(setup_phase > 1 && number_people < number_people_max)
+            if(setup_phase > 1)
                 log_update_number(&hrtc, &gTime, &gDate, ++number_people, &hcomm);
         break;
         case IR_2_PIN:
