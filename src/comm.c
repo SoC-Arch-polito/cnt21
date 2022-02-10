@@ -13,7 +13,8 @@
            set_time : Set the system date and time.       Usage: set_time dd/mm/yyyy hh/mm/ss\r\n\
            set      : Set the threshold for people count. Usage: set <N>\r\n\
            get      : Retrieves the log of the system.    Usage: <use external script to decode>\r\n\
-           help     : Shows this help.                    Usage: help\r\n"
+           help     : Shows this help.                    Usage: help\r\n\
+           reset    : Reset the counter and the log.      Usage: reset\r\n"
 
 
 static struct COMM_Handle *phcomm;
@@ -123,7 +124,12 @@ static void rxCpltCback(UART_HandleTypeDef *huart) {
             strcpy((char *)buf, STR_HELP);
             len = sizeof(STR_HELP) - 3;
             buf_cnt = 0;
-        } else if (buf_cnt) {
+        } else if (!strncmp((char *)buf, "reset", 0x5)) {
+            INVOKE_CB(phcomm->Callback.onReset, true);
+            strcpy((char *)buf, "\r\nRESET DONE!\r\n");
+            len = 12;
+            buf_cnt = 0;
+        }  else if (buf_cnt) {
             strcpy((char *)buf, STR_NOTFOUND);
             len = sizeof(STR_NOTFOUND) - 3;
             buf_cnt = 0;

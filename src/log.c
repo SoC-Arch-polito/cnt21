@@ -78,6 +78,7 @@ void flashEraseSector(uint8_t sector_num) {
     // Erase the required Flash sector
     FLASH_Erase_Sector(sector_num, FLASH_VOLTAGE_RANGE_3);
     HAL_FLASH_Lock();
+    i = 0;
 }
 
 // 2. Set Sector Adress
