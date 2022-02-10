@@ -204,7 +204,8 @@ The DMA sub module is in charge to configure a DMA channel in order to transfer,
 #### COMM main module
 main module, finally, puts together them and creates the real interaction between the operator and the system. During its init phase, it initialise both the UART and DMA sub modules and links the DMA peripheral to the UART one by means of a function exposed by the UART sub module. It defines two internal callbacks both for UART's receive interrupt and transmit complete interrupt. The receive callback is in charge of handling the commands sent by the operator and for a complete list of commands available, the operator can use the command help.
 
-![image](https://user-images.githubusercontent.com/9128612/147503209-bae8e391-c02f-44ee-81cd-5098d5b92036.png)
+![image](https://user-images.githubusercontent.com/9128612/153429639-a133fd39-e61f-40e0-82d2-96b2cfac901b.png)
+
 
 - `newValueSet`: launched when the operator set a new value, only if it's a valid value (<= 65535). The new value is passed as function argument to the callback.
 - `onUARTDownload`: it's executed both when a download operation begins and ends (it can be distinguished thanks to the function's boolean argument). In the final implementation, it's used to set the LCD screen with the sentence "Downloading..".
