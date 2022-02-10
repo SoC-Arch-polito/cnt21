@@ -208,7 +208,8 @@ main module, finally, puts together them and creates the real interaction betwee
 
 - `newValueSet`: launched when the operator set a new value, only if it's a valid value (<= 65535). The new value is passed as function argument to the callback.
 - `onUARTDownload`: it's executed both when a download operation begins and ends (it can be distinguished thanks to the function's boolean argument). In the final implementation, it's used to set the LCD screen with the sentence "Downloading..".
-- `texttt{onNewSysDateTime`: launched when the operator set a new date and time for the system, only if it has a valid format dd/mm/yyyy hh/mm/ss. In the final implementation, it's used to set up the RTC peripheral's time.
+- `onNewSysDateTime`: launched when the operator set a new date and time for the system, only if it has a valid format dd/mm/yyyy hh/mm/ss. In the final implementation, it's used to set up the RTC peripheral's time.
+- `onReset`: launched when the operator wants to reset both the log file, the current counter and the max number of allowed people. This command has no parameters and it does not reset the RTC.
 
 Finally, the important thing to underline is that the log are stored in the flash memory in a raw format (4 bytes timestamp + 2 bytes count) so a simple get command gives as output an unreadable string. In order to read and understand it, an external python script has been developed that sends via UART the command get and decodes the output given by the system.
 
