@@ -89,7 +89,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+![Product Name Screen Shot][product-screenshot]
 
 The people counter is able to count the number of people that enter/exit a room using two IR sensors. In addition to that, there are two leds that signal if the room is full (red) or if there are places left (green). Moreover, a display shows the number of free seats. The maximum number of people, the reset feature and the log transfer can be done via UART.
 Our target is to develop firmware modules able to save the status of the system on log files in the flash memory, configure the device and download logs via UART + DMA. In addition to that, the system will also show the state of the room on the LCD display and on the leds and manage the IR sensors + RTC.
